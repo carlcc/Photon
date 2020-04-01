@@ -1,0 +1,3 @@
+[submodule "thirdparty/SSBase"]
+	path = thirdparty/SSBase
+	url = https://github.com/carlcc/SSBase.git
