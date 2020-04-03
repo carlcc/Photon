@@ -4,11 +4,12 @@
 
 #include "MediaPlayer.h"
 #include "PlayerEvent.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_opengl3.h"
+#include "imgui/imgui_impl_sdl.h"
 #include <SDL2/SDL.h>
+#include <functional>
 #include <glad/glad.h>
-#include <imgui.h>
-#include <imgui_impl_opengl3.h>
-#include <imgui_impl_sdl.h>
 #include <iostream>
 #include <memory>
 
@@ -46,12 +47,12 @@ void main() {
     vertices[5] = vec2(1.0f, 1.0f);
 
     vec2 uvs[6];
-    uvs[0] = vec2(0.0f, 0.0f);
-    uvs[1] = vec2(1.0f, 1.0f);
-    uvs[2] = vec2(0.0f, 1.0f);
-    uvs[3] = vec2(0.0f, 0.0f);
-    uvs[4] = vec2(1.0f, 0.0f);
-    uvs[5] = vec2(1.0f, 1.0f);
+    uvs[0] = vec2(0.0f, 1.0f);
+    uvs[1] = vec2(1.0f, 0.0f);
+    uvs[2] = vec2(0.0f, 0.0f);
+    uvs[3] = vec2(0.0f, 1.0f);
+    uvs[4] = vec2(1.0f, 1.0f);
+    uvs[5] = vec2(1.0f, 0.0f);
 
     gl_Position = vec4(vertices[gl_VertexID], 0.0f, 1.0f);
     texCoord = uvs[gl_VertexID];
@@ -68,13 +69,13 @@ uniform sampler2D vTex;
 out vec4 OutColor;
 
 void main() {
-    const mat4 yuv2rgb = mat4(
-        0.00456, 0.00456, 0.00456, 0.00000,
-        0.00000, -0.00153, 0.00791, 0.00000,
-        0.00626, -0.00319, 0.00000, 0.00000,
-        -0.87416, 0.53133, -1.08599, 1.00000);
-
-    OutColor = vec4(1.0f,0.0f, 0.0f, 1.0f);
+    float y = texture(yTex, texCoord). r - 16.0/256;
+    float u = texture(uTex, texCoord).r - 0.5;
+    float v = texture(vTex, texCoord).r - 0.5;
+    float r = y -0.001 * u + 1.404*v;
+    float g = y - 0.3441 * u - 0.7141*v;
+    float b = y + 1.772 * u - 0.001*v;
+    OutColor = vec4(r,g,b, 1.0);
 }
 )";
 
@@ -86,13 +87,17 @@ public:
         if (glProgram_ == 0) {
             return;
         }
+        glUseProgram(glProgram_);
         glUniform1i(glGetUniformLocation(glProgram_, "yTex"), 0);
+        CHECK_GL_ERROR();
         glUniform1i(glGetUniformLocation(glProgram_, "uTex"), 1);
+        CHECK_GL_ERROR();
         glUniform1i(glGetUniformLocation(glProgram_, "vTex"), 2);
-
-        glGenTextures(3, yuvTextures);
+        CHECK_GL_ERROR();
 
         glGenVertexArrays(1, &VAO);
+        glBindVertexArray(VAO);
+        glGenTextures(3, yuvTextures);
     }
 
     ~PlayerDisplayShader()
@@ -115,6 +120,10 @@ public:
 
     void SetTextureData(const IVideoFrame* frame)
     {
+        if (frame == nullptr) {
+            return;
+        }
+
         GLsizei width = frame->Width();
         GLsizei height = frame->Height();
         const uint8_t* y = frame->Y();
@@ -124,7 +133,6 @@ public:
         const uint32_t uStride = frame->UStride();
         const uint32_t vStride = frame->VStride();
 
-
         bool needResize = width != currentWidth || height != currentHeight;
         if (needResize) {
             currentWidth = width;
@@ -132,31 +140,32 @@ public:
         }
 
         glActiveTexture(GL_TEXTURE0);
-        if (needResize) {
-            glTexStorage2D(GL_TEXTURE_2D, 0, GL_RED, width, height);
-        }
+        glBindTexture(GL_TEXTURE_2D, yuvTextures[0]);
         glPixelStorei(GL_UNPACK_ROW_LENGTH, yStride);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RED, GL_UNSIGNED_BYTE, y);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, y);
+        glGenerateMipmap(GL_TEXTURE_2D);
 
         glActiveTexture(GL_TEXTURE1);
-        if (needResize) {
-            glTexStorage2D(GL_TEXTURE_2D, 0, GL_RED, width / 2, height / 2);
-        }
+        glBindTexture(GL_TEXTURE_2D, yuvTextures[1]);
         glPixelStorei(GL_UNPACK_ROW_LENGTH, uStride);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width / 2, height / 2, GL_RED, GL_UNSIGNED_BYTE, u);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width / 2, height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, u);
+        glGenerateMipmap(GL_TEXTURE_2D);
 
         glActiveTexture(GL_TEXTURE2);
-        if (needResize) {
-            glTexStorage2D(GL_TEXTURE_2D, 0, GL_RED, width / 2, height / 2);
-        }
+        glBindTexture(GL_TEXTURE_2D, yuvTextures[2]);
         glPixelStorei(GL_UNPACK_ROW_LENGTH, vStride);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width / 2, height / 2, GL_RED, GL_UNSIGNED_BYTE, v);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width / 2, height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, v);
+        glGenerateMipmap(GL_TEXTURE_2D);
     }
 
     void Draw()
     {
-        glBindVertexArray(VAO);
         glUseProgram(glProgram_);
+        glBindVertexArray(VAO);
+        for (int i = 0; i < 3; ++i) {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, yuvTextures[i]);
+        }
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
@@ -241,9 +250,9 @@ public:
     }
 
 private:
-    GLuint glProgram_;
-    GLuint yuvTextures[3];
-    GLuint VAO;
+    GLuint glProgram_ { 0 };
+    GLuint yuvTextures[3] { 0 };
+    GLuint VAO { 0 };
     GLsizei currentWidth { 0 };
     GLsizei currentHeight { 0 };
 };
@@ -270,7 +279,7 @@ public:
         }
     };
 
-    explicit Impl(Config* config)
+    explicit Impl(const Config* config)
     {
         config_ = *config;
     }
@@ -280,38 +289,16 @@ public:
         Stop();
     }
 
-    bool Start()
-    {
-        if (playerThread_ != nullptr) {
-            std::cerr << "The player is already started." << std::endl;
-            return true;
-        }
-        isRunning_ = true;
-        // clang-format off
-        playerThread_ = SDL_CreateThread([](void* data) -> int {
-            auto* self = static_cast<Impl*>(data);
-            return self->Run();
-        },"PlayerThread", this);
-        // clang-format on
-        return playerThread_ != nullptr;
-    }
-
-    void Stop(bool waitUntilThreadStop = true)
+    void Stop()
     {
         isRunning_ = false;
-        if (waitUntilThreadStop) {
-            if (playerThread_ != nullptr) {
-                SDL_WaitThread(playerThread_, nullptr);
-                playerThread_ = nullptr;
-            }
-        }
     }
 
     bool Init()
     {
         static SDLInitHelper sSDLInitHelper;
 
-        window_ = SDL_CreateWindow(config_.title, config_.x, config_.y, config_.width, config_.height, SDL_WINDOW_OPENGL);
+        window_ = SDL_CreateWindow(config_.title, config_.x, config_.y, config_.width, config_.height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
         PHOTON_ASSERT(window_ != nullptr, "Create SDL2 window failed.");
 
         glContext_ = SDL_GL_CreateContext(window_);
@@ -374,11 +361,12 @@ public:
 
     int Run()
     {
+        isRunning_ = true;
         Init();
 
         while (isRunning_) {
             SDL_Event event;
-            if (SDL_PollEvent(&event)) {
+            while (SDL_PollEvent(&event)) {
                 if (ImGui_ImplSDL2_ProcessEvent(&event)) {
                     // This event was handled by imgui
                 } else {
@@ -405,16 +393,34 @@ public:
         playerDisplayShader_->SetTextureData(frameData_.get());
     }
 
-    void Update()
+    void RenderImage()
     {
-        if (ImGui::Begin("MainWindow")) {
-            ImGui::Text("Text");
+        if (frameData_ == nullptr) {
+            return;
         }
-        ImGui::End();
-    }
+        ImGuiIO& io = ImGui::GetIO();
+        auto imgW = frameData_->Width();
+        auto imgH = frameData_->Height();
+        float imgAspect = 1.0f * imgH / imgW;
+        auto winW = io.DisplaySize.x;
+        auto winH = io.DisplaySize.y;
+        float winAspect = 1.0f * winH / winW;
 
-    void RenderWindow()
-    {
+        int x, y;
+        int w, h;
+        if (winAspect < imgAspect) {
+            w = winH / imgAspect;
+            h = winH;
+            x = (winW - w) / 2;
+            y = 0;
+        } else {
+            w = winW;
+            h = winW * imgAspect;
+            x = 0;
+            y = (winH - h) / 2;
+        }
+
+        glViewport(x, y, w, h);
         playerDisplayShader_->Draw();
     }
 
@@ -424,18 +430,21 @@ public:
         ImGui_ImplSDL2_NewFrame(window_);
         ImGui::NewFrame();
 
-        Update();
+        if (onUpdate_) {
+            onUpdate_();
+        }
 
         // mWindowSystem->emit(EventType::Window::GuiRenderEvent, dummy); // gen draw calls
         ImGui::Render();
 
         ImGuiIO& io = ImGui::GetIO();
         glViewport(0, 0, static_cast<int>(io.DisplaySize.x), static_cast<int>(io.DisplaySize.y));
-        glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-        RenderWindow();
+        RenderImage();
 
+        glViewport(0, 0, static_cast<int>(io.DisplaySize.x), static_cast<int>(io.DisplaySize.y));
         // mWindowSystem->emit(EventType::Window::RenderEvent, dummy); // do 3d render
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData()); // do actual draw call
 
@@ -455,7 +464,6 @@ public:
 
 private:
     bool isRunning_ { false };
-    SDL_Thread* playerThread_ { nullptr };
     Config config_ {};
 
     // These members are only alive while Run() is not return
@@ -464,11 +472,17 @@ private:
     ImGuiContext* imguiContext_ { nullptr };
     PlayerDisplayShader* playerDisplayShader_ { nullptr };
     std::shared_ptr<IVideoFrame> frameData_ { nullptr };
+    std::function<void()> onUpdate_;
+
+    friend class MediaPlayer;
 };
 
-MediaPlayer::MediaPlayer(Config* config)
+MediaPlayer::MediaPlayer(const Config* config)
     : impl_(new Impl(config))
 {
+    impl_->onUpdate_ = [this]() {
+        UpdateUI();
+    };
 }
 
 MediaPlayer::~MediaPlayer()
@@ -476,14 +490,14 @@ MediaPlayer::~MediaPlayer()
     delete impl_;
 }
 
-bool MediaPlayer::Start()
+bool MediaPlayer::Run()
 {
-    return impl_->Start();
+    return impl_->Run();
 }
 
-void MediaPlayer::Stop(bool waitUntilThreadStop)
+void MediaPlayer::Stop()
 {
-    return impl_->Stop(waitUntilThreadStop);
+    return impl_->Stop();
 }
 
 void MediaPlayer::SetVideoFrame(const std::shared_ptr<IVideoFrame>& frame)

@@ -22,7 +22,7 @@ PhotonFindPath(SDL2_INCLUDE "SDL2/SDL.h" True)
 
 set(PHOTON_PROJECT_ROOT ${CMAKE_CURRENT_LIST_DIR})
 set(GLAD_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/thirdparty/glad/include)
-set(IMGUI_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/thirdparty/imgui)
+set(YUV_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libyuv/include)
 set(SSBASE_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/thirdparty/SSBase/src)
 
 add_subdirectory(thirdparty)
