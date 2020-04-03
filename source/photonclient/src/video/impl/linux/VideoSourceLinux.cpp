@@ -17,9 +17,9 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-VideoSourceLinux::VideoSourceLinux(const std::string& path, const FrameFormat& fmt)
+VideoSourceLinux::VideoSourceLinux(const std::string& path, const CameraConf& conf)
 {
-    frameFormat_ = fmt;
+    frameFormat_ = conf.frameFormat;
     fd_ = open(path.c_str(), O_RDWR);
     if (fd_ == -1) {
         perror(path.c_str());
@@ -30,22 +30,31 @@ VideoSourceLinux::VideoSourceLinux(const std::string& path, const FrameFormat& f
         Close();
     };
 
-    uint32_t v4l2PixFmt = PhotonPixelFormatToV4l2PixelFormat(fmt.pixelFormat);
+    uint32_t v4l2PixFmt = PhotonPixelFormatToV4l2PixelFormat(frameFormat_.pixelFormat);
     if (v4l2PixFmt == -1) {
-        std::cerr << "Unkown pixel format: " << fmt.pixelFormat << std::endl;
+        std::cerr << "Unkown pixel format: " << frameFormat_.pixelFormat << std::endl;
         return;
     }
 
     v4l2_format v4l2Fmt = { 0 };
     v4l2Fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    v4l2Fmt.fmt.pix.width = fmt.resolution.width;
-    v4l2Fmt.fmt.pix.height = fmt.resolution.height;
+    v4l2Fmt.fmt.pix.width = frameFormat_.resolution.width;
+    v4l2Fmt.fmt.pix.height = frameFormat_.resolution.height;
     v4l2Fmt.fmt.pix.pixelformat = v4l2PixFmt;
     v4l2Fmt.fmt.pix.field = V4L2_FIELD_NONE;
     v4l2Fmt.fmt.pix.bytesperline = 0;
 
     if (-1 == ioctl(fd_, VIDIOC_S_FMT, &v4l2Fmt)) {
         perror("Setting Pixel Format");
+        return;
+    }
+
+    v4l2_streamparm v4l2Interval = { 0 };
+    v4l2Interval.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    v4l2Interval.parm.capture.timeperframe.numerator = conf.frameInterval.numerator;
+    v4l2Interval.parm.capture.timeperframe.denominator = conf.frameInterval.denominator;
+    if (-1 == ioctl(fd_, VIDIOC_S_PARM, &v4l2Interval)) {
+        perror("Setting frame rate");
         return;
     }
 
@@ -98,7 +107,7 @@ bool VideoSourceLinux::StartCapture()
             return;
         }
 
-        void* buffer = mmap(nullptr, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, buf.m.offset);
+        void* buffer = mmap(nullptr, buf.length, PROT_READ, MAP_SHARED, fd_, buf.m.offset);
         if (buffer == MAP_FAILED) {
             perror("mmap Buffer");
             return;

@@ -12,5 +12,5 @@ public:
 
     std::string path;
     std::string cardName;
-    std::vector<FrameFormat> supportedFrameFormats;
+    std::vector<CameraConf> supportedCameraConfs;
 };

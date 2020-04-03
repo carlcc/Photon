@@ -11,7 +11,7 @@ class VideoSourceLinux {
 public:
     using OnDataCallback = std::function<void(const void* data)>;
     using OnFrameCallback = std::function<void(std::shared_ptr<IVideoFrame> frame)>;
-    VideoSourceLinux(const std::string& path, const FrameFormat& fmt);
+    VideoSourceLinux(const std::string& path, const CameraConf& conf);
     ~VideoSourceLinux();
 
     void SetOnRawData(const OnDataCallback& onData);

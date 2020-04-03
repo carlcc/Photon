@@ -48,6 +48,18 @@ static const uint32_t v4l2_framesizes[] = {
     0
 };
 
+static const uint32_t v4l2_framerates[] = {
+    1 << 16 | 60,
+    1 << 16 | 50,
+    1 << 16 | 30,
+    1 << 16 | 25,
+    1 << 16 | 20,
+    1 << 16 | 15,
+    1 << 16 | 10,
+    1 << 16 | 5,
+    0
+};
+
 /**
  * Unpack two integer values from one
  *
@@ -96,6 +108,42 @@ std::vector<Resolution> ListSupportedFrameSizes(int fd, uint32_t v4l2Fmt)
     return result;
 }
 
+std::vector<FrameInterval> ListSupportedFrameIntervals(int fd, uint32_t v4l2Fmt, uint32_t width, uint32_t height)
+{
+    std::vector<FrameInterval> result;
+
+    v4l2_frmivalenum frmival;
+    frmival.pixel_format = v4l2Fmt;
+    frmival.width = width;
+    frmival.height = height;
+    frmival.index = 0;
+
+    ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmival);
+
+    switch (frmival.type) {
+    case V4L2_FRMIVAL_TYPE_DISCRETE:
+        while (ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) == 0) {
+
+            result.push_back({ frmival.discrete.numerator, frmival.discrete.denominator });
+
+            frmival.index++;
+        }
+        break;
+    default:
+        std::cout << "Stepwise and Continuous framerates are currently hardcoded" << std::endl;
+
+        for (const uint32_t* packed = v4l2_framerates; *packed; ++packed) {
+            uint32_t num;
+            uint32_t denom;
+            v4l2_unpack_tuple(&num, &denom, *packed);
+            result.push_back({ num, denom });
+        }
+        break;
+    }
+
+    return result;
+}
+
 std::vector<VideoSourceInfoLinux> VideoSourceInfoLinux::QueryAllVideoSources()
 {
     std::vector<VideoSourceInfoLinux> result;
@@ -124,7 +172,7 @@ std::vector<VideoSourceInfoLinux> VideoSourceInfoLinux::QueryAllVideoSources()
         }
 
         // Query supported pixel formats
-        std::vector<FrameFormat> frameFormats;
+        std::vector<CameraConf> cameraConfs;
         v4l2_fmtdesc fmtDesc = { 0 };
         fmtDesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         for (; ioctl(fd, VIDIOC_ENUM_FMT, &fmtDesc) == 0; fmtDesc.index++) { // NOLINT
@@ -135,14 +183,17 @@ std::vector<VideoSourceInfoLinux> VideoSourceInfoLinux::QueryAllVideoSources()
 
             auto frameSizes = ListSupportedFrameSizes(fd, fmtDesc.pixelformat);
             for (auto& size : frameSizes) {
-                frameFormats.push_back({ fmt, size });
+                auto frameIntervals = ListSupportedFrameIntervals(fd, fmtDesc.pixelformat, size.width, size.height);
+                for (auto interval : frameIntervals) {
+                    cameraConfs.push_back({{fmt, size}, interval});
+                }
             }
         }
-        if (frameFormats.empty()) {
+        if (cameraConfs.empty()) {
             continue;
         }
 
-        result.push_back({ std::move(path), std::string((const char*)caps.card), std::move(frameFormats) });
+        result.push_back({ std::move(path), std::string((const char*)caps.card), std::move(cameraConfs) });
     }
     return result;
 }

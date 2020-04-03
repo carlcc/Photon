@@ -51,3 +51,13 @@ inline bool operator==(const FrameFormat& a, const FrameFormat& b)
 {
     return a.pixelFormat == b.pixelFormat && a.resolution == b.resolution;
 }
+
+struct FrameInterval {
+    uint32_t numerator;
+    uint32_t denominator;
+};
+
+struct CameraConf {
+    FrameFormat frameFormat;
+    FrameInterval frameInterval;
+};

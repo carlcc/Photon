@@ -40,14 +40,15 @@ public:
 
                 if (currentSelectedSourceIndex_ != 0) {
                     auto& srcInfo = videoSourceInfos_[currentSelectedSourceIndex_ - 1];
-                    videoSourceFormats_.reserve(srcInfo.supportedFrameFormats.size() + 1);
+                    videoSourceFormats_.reserve(srcInfo.supportedCameraConfs.size() + 1);
                     videoSourceFormats_.emplace_back("[none]");
-                    for (auto& fmt : srcInfo.supportedFrameFormats) {
-                        std::string str;
-                        str += GetPixelFormatName(fmt.pixelFormat);
-                        str += "; ";
-                        str += std::to_string(fmt.resolution.width) + "x" + std::to_string(fmt.resolution.height);
-                        videoSourceFormats_.push_back(std::move(str));
+                    for (auto& conf : srcInfo.supportedCameraConfs) {
+                        char buf[256];
+                        snprintf(buf, sizeof(buf), "%s; %ux%u; %.1f fps",
+                            GetPixelFormatName(conf.frameFormat.pixelFormat),
+                            conf.frameFormat.resolution.width, conf.frameFormat.resolution.height,
+                            1.0 * conf.frameInterval.denominator / conf.frameInterval.numerator);
+                        videoSourceFormats_.emplace_back(buf);
                     }
                 }
             }
@@ -61,9 +62,9 @@ public:
                     if (currentSelectedFormatIndex_ != 0) {
                         // open stream
                         auto& sourceInfo = videoSourceInfos_[currentSelectedSourceIndex_ - 1];
-                        auto& frameFmt = sourceInfo.supportedFrameFormats[currentSelectedFormatIndex_ - 1];
+                        auto& cameraConf = sourceInfo.supportedCameraConfs[currentSelectedFormatIndex_ - 1];
 
-                        videoSource_ = std::make_shared<VideoSource>(sourceInfo.path, frameFmt);
+                        videoSource_ = std::make_shared<VideoSource>(sourceInfo.path, cameraConf);
                         videoSource_->SetCallbackPixelFormat(PixelFormat::FMT_YUV420P);
                         videoSource_->SetOnFrame([this](const std::shared_ptr<IVideoFrame>& frame) {
                             SetVideoFrame(frame);
