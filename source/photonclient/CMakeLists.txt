@@ -1,9 +1,9 @@
 project(photonclient)
 
-file(GLOB SRC_FILES src/* src/imgui/* video/*)
+file(GLOB SRC_FILES src/* src/imgui/* src/video/* src/audio/*)
 
 set(REQUIRED_PACKAGES
-        AVFORMAT AVCODEC AVDEVICE AVUTIL SWSCALE SDL2
+        PORTAUDIO SDL2
         )
 
 if (WIN32)

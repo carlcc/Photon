@@ -3,6 +3,7 @@
 //
 #pragma once
 
+#include "audio/AudioFrameFormat.h"
 #include "video/IVideoFrame.h"
 #include <SDL2/SDL.h>
 #include <cstdint>
@@ -27,6 +28,10 @@ public:
     void Stop();
 
     void SetVideoFrame(const std::shared_ptr<IVideoFrame>& frame);
+
+    void SetAudioFormat(const MicConf& format);
+
+    uint32_t PushAudioFrames(const int16_t* data, uint32_t count);
 
     virtual void UpdateUI() {}
 

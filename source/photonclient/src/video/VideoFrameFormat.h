@@ -43,11 +43,11 @@ inline bool operator<(const Resolution& a, const Resolution& b)
     return a.width * a.height < b.width * b.height;
 }
 
-struct FrameFormat {
+struct VideoFrameFormat {
     PixelFormat pixelFormat;
     Resolution resolution;
 };
-inline bool operator==(const FrameFormat& a, const FrameFormat& b)
+inline bool operator==(const VideoFrameFormat& a, const VideoFrameFormat& b)
 {
     return a.pixelFormat == b.pixelFormat && a.resolution == b.resolution;
 }
@@ -58,6 +58,6 @@ struct FrameInterval {
 };
 
 struct CameraConf {
-    FrameFormat frameFormat;
+    VideoFrameFormat frameFormat;
     FrameInterval frameInterval;
 };

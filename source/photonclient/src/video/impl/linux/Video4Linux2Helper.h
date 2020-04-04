@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../../FrameFormat.h"
+#include "../../VideoFrameFormat.h"
 #include <cstdint>
 
 PixelFormat V4l2PixelFormatToPhotonPixelFormat(uint32_t format);

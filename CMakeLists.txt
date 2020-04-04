@@ -6,16 +6,8 @@ set(CMAKE_CXX_STANDARD 14)
 
 include(common.cmake)
 
-PhotonFindLibrary(AVCODEC_LIB "avcodec" True)
-PhotonFindPath(AVCODEC_INCLUDE "libavcodec/avcodec.h" True)
-PhotonFindLibrary(AVFORMAT_LIB "avformat" True)
-PhotonFindPath(AVFORMAT_INCLUDE "libavformat/avformat.h" True)
-PhotonFindLibrary(AVDEVICE_LIB "avdevice" True)
-PhotonFindPath(AVDEVICE_INCLUDE "libavdevice/avdevice.h" True)
-PhotonFindLibrary(AVUTIL_LIB "avutil" True)
-PhotonFindPath(AVUTIL_INCLUDE "libavutil/avutil.h" True)
-PhotonFindLibrary(SWSCALE_LIB "swscale" True)
-PhotonFindPath(SWSCALE_INCLUDE "libswscale/swscale.h" True)
+PhotonFindLibrary(PORTAUDIO_LIB "portaudio" True)
+PhotonFindPath(PORTAUDIO_INCLUDE "portaudio.h" True)
 
 PhotonFindLibrary(SDL2_LIB "SDL2" True)
 PhotonFindPath(SDL2_INCLUDE "SDL2/SDL.h" True)

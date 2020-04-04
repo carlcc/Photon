@@ -2,7 +2,7 @@
 // Created by carl on 20-4-2.
 //
 #pragma once
-#include "../../FrameFormat.h"
+#include "../../VideoFrameFormat.h"
 #include <string>
 #include <vector>
 

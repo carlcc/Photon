@@ -40,7 +40,7 @@ private:
 
 private:
     int fd_ { -1 };
-    FrameFormat frameFormat_;
+    VideoFrameFormat frameFormat_;
     std::thread captureThread_ {};
     OnDataCallback onDataCallback_ { nullptr };
     OnFrameCallback onFrameCallback_ { nullptr };

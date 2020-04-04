@@ -3,7 +3,7 @@
 //
 
 #include "Video4Linux2Helper.h"
-#include "../../FrameFormat.h"
+#include "../../VideoFrameFormat.h"
 #include <linux/v4l2-common.h>
 #include <linux/videodev2.h>
 
