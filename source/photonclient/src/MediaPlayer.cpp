@@ -468,10 +468,13 @@ public:
     bool SetAudioFormat(const MicConf& format)
     {
         SDL_CloseAudio();
+        if (format.channelCount == 0 || format.sampleRate == 0) {
+            return true;
+        }
 
         // Audio
         SDL_AudioSpec wanted_spec, got;
-        wanted_spec.freq = format.sampleRate;
+        wanted_spec.freq = int(format.sampleRate);
         wanted_spec.format = AUDIO_S16SYS;
         wanted_spec.channels = format.channelCount;
         wanted_spec.silence = 0;
@@ -482,7 +485,7 @@ public:
                 len = self->audioBuffer_.Size();
             }
             std::unique_lock<std::mutex> lck(self->audioBufferMutex_);
-            //            SDL_MixAudio(stream, self->audioBuffer_.GetData<uint8_t>(), len, SDL_MIX_MAXVOLUME);
+            // SDL_MixAudio(stream, self->audioBuffer_.GetData<uint8_t>(), len, SDL_MIX_MAXVOLUME);
             self->audioBuffer_.ReadData(stream, len);
             self->audioBuffer_.Skip(len);
         };

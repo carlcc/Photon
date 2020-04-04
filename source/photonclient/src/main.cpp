@@ -83,7 +83,7 @@ public:
             audioSourceFormats_.clear();
             currentAudioFormatIndex_ = 0;
             audioSource_ = nullptr; // release the former one
-            // SetVideoFrame(nullptr);
+            SetAudioFormat({ 0, 0 });
 
             if (currentAudioSourceIndex_ != 0) {
                 auto& srcInfo = audioSourceInfos_[currentAudioSourceIndex_ - 1];
@@ -105,7 +105,7 @@ public:
             OnScopeExit { ImGui::Unindent(); };
             if (ImGui::Combo("Format", &currentAudioFormatIndex_, audioSourceFormats_)) {
                 audioSource_ = nullptr; // release the former one
-                // SetVideoFrame(nullptr);
+                SetAudioFormat({ 0, 0 });
                 if (currentAudioFormatIndex_ != 0) {
                     // open stream
                     auto& sourceInfo = audioSourceInfos_[currentAudioSourceIndex_ - 1];
