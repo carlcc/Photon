@@ -1,7 +1,10 @@
 //
 // Created by carl on 20-3-31.
 //
+#define SDL_MAIN_HANDLED
 #include "MediaPlayer.h"
+#include "audio/AudioDestination.h"
+#include "audio/AudioDestinationInfo.h"
 #include "audio/AudioSource.h"
 #include "audio/AudioSourceInfo.h"
 #include "imgui/imgui.h"
@@ -24,11 +27,18 @@ public:
             videoSourceNames_.push_back(info.cardName);
         }
 
-        audioSourceInfos_ = AudioSourceInfo::QueryAllVideoSources();
+        audioSourceInfos_ = AudioSourceInfo::QueryAllAudioSources();
         audioSourceNames_.reserve(audioSourceInfos_.size() + 1);
         audioSourceNames_.emplace_back("[none]");
         for (auto& info : audioSourceInfos_) {
             audioSourceNames_.push_back(info.cardName);
+        }
+
+        audioDestinationInfos_ = AudioDestinationInfo::QueryAllAudioDestinations();
+        audioDestinationNames_.reserve(audioDestinationInfos_.size() + 1);
+        audioDestinationNames_.emplace_back("[none]");
+        for (auto& info : audioDestinationInfos_) {
+            audioDestinationNames_.push_back(info.cardName);
         }
     }
 
@@ -79,11 +89,10 @@ public:
 
     void UpdateAudio()
     {
-        if (ImGui::Combo("Audio Device", &currentAudioSourceIndex_, audioSourceNames_)) {
+        if (ImGui::Combo("Audio input Device", &currentAudioSourceIndex_, audioSourceNames_)) {
             audioSourceFormats_.clear();
             currentAudioFormatIndex_ = 0;
             audioSource_ = nullptr; // release the former one
-            SetAudioFormat({ 0, 0 });
 
             if (currentAudioSourceIndex_ != 0) {
                 auto& srcInfo = audioSourceInfos_[currentAudioSourceIndex_ - 1];
@@ -105,19 +114,33 @@ public:
             OnScopeExit { ImGui::Unindent(); };
             if (ImGui::Combo("Format", &currentAudioFormatIndex_, audioSourceFormats_)) {
                 audioSource_ = nullptr; // release the former one
-                SetAudioFormat({ 0, 0 });
                 if (currentAudioFormatIndex_ != 0) {
                     // open stream
                     auto& sourceInfo = audioSourceInfos_[currentAudioSourceIndex_ - 1];
                     auto& micConf = sourceInfo.supportedMicConfs[currentAudioFormatIndex_ - 1];
 
-                    SetAudioFormat(micConf);
                     audioSource_ = std::make_shared<AudioSource>(sourceInfo.path, micConf);
                     audioSource_->SetOnAudioFrame([this](const int16_t* data, uint32_t frameCount) {
-                        PushAudioFrames(data, frameCount);
+                        if (audioDestination_ != nullptr) {
+                            audioDestination_->WriteSounds(data, frameCount);
+                        }
                     });
                     audioSource_->StartCapture();
                 }
+            }
+        }
+    }
+
+    void UpdateAudioDst()
+    {
+        if (ImGui::Combo("Audio output Device", &currentAudioDestinationIndex_, audioDestinationNames_)) {
+            audioDestination_ = nullptr;
+            if (currentAudioDestinationIndex_ != 0) {
+                const auto& conf = audioDestinationInfos_[currentAudioDestinationIndex_ - 1];
+                auto& sourceInfo = audioSourceInfos_[currentAudioSourceIndex_ - 1];
+                auto& micConf = sourceInfo.supportedMicConfs[currentAudioFormatIndex_ - 1];
+                audioDestination_ = std::make_shared<AudioDestination>(conf.path, micConf);
+                audioDestination_->StartPlay();
             }
         }
     }
@@ -129,8 +152,12 @@ public:
             UpdateVideo();
             ImGui::PopID();
 
-            ImGui::PushID("Audio");
+            ImGui::PushID("AudioSrc");
             UpdateAudio();
+            ImGui::PopID();
+
+            ImGui::PushID("AudioDst");
+            UpdateAudioDst();
             ImGui::PopID();
         }
         ImGui::End();
@@ -154,6 +181,13 @@ private:
     int currentAudioFormatIndex_ { 0 };
 
     std::shared_ptr<AudioSource> audioSource_ { nullptr };
+
+    // audio output
+    std::vector<AudioDestinationInfo> audioDestinationInfos_;
+    std::vector<std::string> audioDestinationNames_;
+    int currentAudioDestinationIndex_ { 0 };
+
+    std::shared_ptr<AudioDestination> audioDestination_ { nullptr };
 };
 
 int main()

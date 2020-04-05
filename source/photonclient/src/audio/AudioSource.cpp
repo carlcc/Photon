@@ -95,6 +95,11 @@ public:
         }
     }
 
+    explicit operator bool() const
+    {
+        return stream_ != nullptr;
+    }
+
 private:
     PaStream* stream_ { nullptr };
     MicConf micConf_;
@@ -124,4 +129,8 @@ bool AudioSource::StartCapture()
 void AudioSource::StopCapture()
 {
     return impl_->StopCapture(true);
+}
+AudioSource::operator bool() const
+{
+    return bool(*impl_);
 }

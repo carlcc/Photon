@@ -2,18 +2,17 @@
 set(PHOTON_LIBRARY_FIND_PATH
         ${CMAKE_CURRENT_LIST_DIR}/thirdparty/lib64
         ${CMAKE_CURRENT_LIST_DIR}/thirdparty/lib
+        ${CMAKE_CURRENT_LIST_DIR}/libs/lib
         /usr/local/lib64
         /usr/local/lib
         /usr/lib64
         /usr/lib
         )
 set(PHOTON_PATH_FIND_PATH
-        ${CMAKE_CURRENT_LIST_DIR}/thirdparty/lib64
-        ${CMAKE_CURRENT_LIST_DIR}/thirdparty/lib
-        /usr/local/lib64
-        /usr/local/lib
-        /usr/lib64
-        /usr/lib
+        ${CMAKE_CURRENT_LIST_DIR}/thirdparty/include
+        ${CMAKE_CURRENT_LIST_DIR}/libs/include
+        /usr/local/include
+        /usr/local/include
         )
 
 function(PhotonFindLibrary output libName isRequired)
@@ -41,6 +40,7 @@ function(PhotonFindLibrary output libName isRequired)
     find_library(${output}
             NAMES ${PLATFORM_LIB_NAME}
             PATHS ${PHOTON_LIBRARY_FIND_PATH}
+            NO_DEFAULT_PATH
             )
     if (${output})
         message("Found ${libName}: ${${output}}")
@@ -57,6 +57,7 @@ function(PhotonFindPath output fileName isRequired)
     find_path(${output}
             NAMES ${fileName}
             PATHS ${PHOTON_PATH_FIND_PATH}
+            NO_DEFAULT_PATH
             )
     if (${output})
         message("Found ${fileName} under: ${${output}}")

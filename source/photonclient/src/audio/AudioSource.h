@@ -19,6 +19,13 @@ public:
 
     void StopCapture();
 
+    explicit operator bool() const;
+
+    bool operator!() const
+    {
+        return !bool(*this);
+    }
+
 private:
     class Impl;
     Impl* impl_;

@@ -1,19 +1,16 @@
 //
 // Created by carl on 20-4-1.
 //
-
 #include "MediaPlayer.h"
 #include "PlayerEvent.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_impl_sdl.h"
 #include <SDL2/SDL.h>
-#include <SSBase/Buffer.h>
 #include <functional>
 #include <glad/glad.h>
 #include <iostream>
 #include <memory>
-#include <mutex>
 
 #define PHOTON_ABORT(msg)                                                                \
     do {                                                                                 \
@@ -386,7 +383,6 @@ public:
             RepaintWindow();
         }
 
-        SDL_CloseAudio();
         Clean();
         return 0;
     }
@@ -465,48 +461,6 @@ public:
         SDL_PushEvent(&event);
     }
 
-    bool SetAudioFormat(const MicConf& format)
-    {
-        SDL_CloseAudio();
-        if (format.channelCount == 0 || format.sampleRate == 0) {
-            return true;
-        }
-
-        // Audio
-        SDL_AudioSpec wanted_spec, got;
-        wanted_spec.freq = int(format.sampleRate);
-        wanted_spec.format = AUDIO_S16SYS;
-        wanted_spec.channels = format.channelCount;
-        wanted_spec.silence = 0;
-        wanted_spec.samples = 1024;
-        wanted_spec.callback = [](void* userdata, Uint8* stream, int len) {
-            Impl* self = (Impl*)userdata;
-            if (len > self->audioBuffer_.Size()) {
-                len = self->audioBuffer_.Size();
-            }
-            std::unique_lock<std::mutex> lck(self->audioBufferMutex_);
-            // SDL_MixAudio(stream, self->audioBuffer_.GetData<uint8_t>(), len, SDL_MIX_MAXVOLUME);
-            self->audioBuffer_.ReadData(stream, len);
-            self->audioBuffer_.Skip(len);
-        };
-        wanted_spec.userdata = this;
-
-        if (SDL_OpenAudio(&wanted_spec, &got) < 0) {
-            std::cerr << "can't open audio: " << SDL_GetError() << std::endl;
-            micConf_ = MicConf {};
-            return false;
-        }
-        micConf_ = format;
-        SDL_PauseAudio(0);
-        return true;
-    }
-
-    uint32_t PushAudioFrames(const int16_t* data, uint32_t count)
-    {
-        std::unique_lock<std::mutex> lck(audioBufferMutex_);
-        return audioBuffer_.TryPushData(data, count * sizeof(int16_t) * micConf_.channelCount);
-    }
-
 private:
     bool isRunning_ { false };
     Config config_ {};
@@ -517,10 +471,8 @@ private:
     ImGuiContext* imguiContext_ { nullptr };
     PlayerDisplayShader* playerDisplayShader_ { nullptr };
     std::shared_ptr<IVideoFrame> frameData_ { nullptr };
-    std::function<void()> onUpdate_;
-    ss::Buffer<256 * 1024> audioBuffer_ {}; // 256kB audio buffer
-    std::mutex audioBufferMutex_;
-    MicConf micConf_;
+    std::function<void()> onUpdate_ { nullptr };
+    MicConf micConf_ {};
 
     friend class MediaPlayer;
 };
@@ -551,14 +503,4 @@ void MediaPlayer::Stop()
 void MediaPlayer::SetVideoFrame(const std::shared_ptr<IVideoFrame>& frame)
 {
     impl_->SetVideoFrame(frame);
-}
-
-void MediaPlayer::SetAudioFormat(const MicConf& format)
-{
-    impl_->SetAudioFormat(format);
-}
-
-uint32_t MediaPlayer::PushAudioFrames(const int16_t* data, uint32_t count)
-{
-    return impl_->PushAudioFrames(data, count);
 }

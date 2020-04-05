@@ -10,7 +10,7 @@
 
 class AudioSourceInfo {
 public:
-    static std::vector<AudioSourceInfo> QueryAllVideoSources();
+    static std::vector<AudioSourceInfo> QueryAllAudioSources();
 
     int path;
     std::string cardName;
