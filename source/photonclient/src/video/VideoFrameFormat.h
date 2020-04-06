@@ -56,8 +56,18 @@ struct FrameInterval {
     uint32_t numerator;
     uint32_t denominator;
 };
+inline bool operator==(const FrameInterval& a, const FrameInterval& b)
+{
+    uint64_t p1 = uint64_t(1) * a.numerator * b.denominator;
+    uint64_t p2 = uint64_t(1) * a.denominator * b.numerator;
+    return p1 == p2;
+}
 
 struct CameraConf {
     VideoFrameFormat frameFormat;
     FrameInterval frameInterval;
 };
+inline bool operator==(const CameraConf& a, const CameraConf& b)
+{
+    return a.frameFormat == b.frameFormat && a.frameInterval == b.frameInterval;
+}

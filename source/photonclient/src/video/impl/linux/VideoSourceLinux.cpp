@@ -17,12 +17,12 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-VideoSourceLinux::VideoSourceLinux(const std::string& path, const CameraConf& conf)
+VideoSourceLinux::VideoSourceLinux(const VideoSourceInfoLinux& sourceInfo, const CameraConf& conf)
 {
     frameFormat_ = conf.frameFormat;
-    fd_ = open(path.c_str(), O_RDWR);
+    fd_ = open(sourceInfo.path.ToStdString().c_str(), O_RDWR);
     if (fd_ == -1) {
-        perror(path.c_str());
+        perror(sourceInfo.path.ToStdString().c_str());
         return;
     }
 

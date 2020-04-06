@@ -11,7 +11,8 @@ using VideoSourceInfo = VideoSourceInfoLinux;
 
 #elif defined(PHOTON_PLATFORM_WIN)
 
-#error NYI
+#include "impl/win32/VideoSourceInfoWin32.h"
+using VideoSourceInfo = VideoSourceInfoWin32;
 
 #elif defined(PHOTON_PLATFORM_APPLE)
 

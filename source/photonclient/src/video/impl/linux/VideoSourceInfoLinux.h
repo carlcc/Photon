@@ -3,6 +3,7 @@
 //
 #pragma once
 #include "../../VideoFrameFormat.h"
+#include <SSBase/Str.h>
 #include <string>
 #include <vector>
 
@@ -10,7 +11,7 @@ class VideoSourceInfoLinux {
 public:
     static std::vector<VideoSourceInfoLinux> QueryAllVideoSources();
 
-    std::string path;
-    std::string cardName;
+    ss::String path;
+    ss::String cardName;
     std::vector<CameraConf> supportedCameraConfs;
 };

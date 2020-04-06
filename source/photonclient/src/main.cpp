@@ -15,7 +15,7 @@
 #include <SSBase/Time.h>
 #include <iostream>
 
-class MyMediaPlayer : public MediaPlayer {
+class MyMediaPlayer : public MediaPlayer, public std::enable_shared_from_this<MyMediaPlayer> {
 public:
     explicit MyMediaPlayer(const Config* config)
         : MediaPlayer(config)
@@ -24,7 +24,7 @@ public:
         videoSourceNames_.reserve(videoSourceInfos_.size() + 1);
         videoSourceNames_.emplace_back("[none]");
         for (auto& info : videoSourceInfos_) {
-            videoSourceNames_.push_back(info.cardName);
+            videoSourceNames_.push_back(info.cardName.ToStdString());
         }
 
         audioSourceInfos_ = AudioSourceInfo::QueryAllAudioSources();
@@ -76,10 +76,13 @@ public:
                     auto& sourceInfo = videoSourceInfos_[currentSelectedSourceIndex_ - 1];
                     auto& cameraConf = sourceInfo.supportedCameraConfs[currentSelectedFormatIndex_ - 1];
 
-                    videoSource_ = std::make_shared<VideoSource>(sourceInfo.path, cameraConf);
+                    videoSource_ = std::make_shared<VideoSource>(sourceInfo, cameraConf);
                     videoSource_->SetCallbackPixelFormat(PixelFormat::FMT_YUV420P);
-                    videoSource_->SetOnFrame([this](const std::shared_ptr<IVideoFrame>& frame) {
-                        SetVideoFrame(frame);
+                    videoSource_->SetOnFrame([weakThis = weak_from_this()](const std::shared_ptr<IVideoFrame>& frame) {
+                        auto sp = weakThis.lock();
+                        if (sp) {
+                            sp->SetVideoFrame(frame);
+                        }
                     });
                     videoSource_->StartCapture();
                 }
@@ -120,9 +123,10 @@ public:
                     auto& micConf = sourceInfo.supportedMicConfs[currentAudioFormatIndex_ - 1];
 
                     audioSource_ = std::make_shared<AudioSource>(sourceInfo.path, micConf);
-                    audioSource_->SetOnAudioFrame([this](const int16_t* data, uint32_t frameCount) {
-                        if (audioDestination_ != nullptr) {
-                            audioDestination_->WriteSounds(data, frameCount);
+                    audioSource_->SetOnAudioFrame([weakThis = weak_from_this()](const int16_t* data, uint32_t frameCount) {
+                        auto sp = weakThis.lock();
+                        if (sp != nullptr && sp->audioDestination_ != nullptr) {
+                           sp->audioDestination_->WriteSounds(data, frameCount);
                         }
                     });
                     audioSource_->StartCapture();
@@ -196,8 +200,8 @@ int main()
         "Photon Client",
         100, 100, 640, 480
     };
-    MyMediaPlayer player(&config);
-    player.Run();
+    auto player = std::make_shared<MyMediaPlayer>(&config);
+    player->Run();
 
     std::cout << "client" << std::endl;
     return 0;

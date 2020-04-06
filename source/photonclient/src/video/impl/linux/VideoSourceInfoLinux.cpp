@@ -151,9 +151,9 @@ std::vector<VideoSourceInfoLinux> VideoSourceInfoLinux::QueryAllVideoSources()
         return file.StartsWith("video");
     });
     for (auto& file : videoFiles) {
-        std::string path = ("/dev/" + file).ToStdString();
+        ss::String path = "/dev/" + file;
 
-        int fd = open(path.c_str(), O_RDWR);
+        int fd = open(path.ToStdString().c_str(), O_RDWR);
         if (fd == -1) {
             // couldn't find capture device
             perror("Opening Video device ");
@@ -193,7 +193,7 @@ std::vector<VideoSourceInfoLinux> VideoSourceInfoLinux::QueryAllVideoSources()
             continue;
         }
 
-        result.push_back({ std::move(path), std::string((const char*)caps.card), std::move(cameraConfs) });
+        result.push_back({ std::move(path), ss::String((const char*)caps.card), std::move(cameraConfs) });
     }
     return result;
 }
