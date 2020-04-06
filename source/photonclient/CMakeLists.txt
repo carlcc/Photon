@@ -23,8 +23,14 @@ endif ()
 add_executable(photonclient ${SRC_FILES} ${PHOTON_PLATFORM_SRC_FILES})
 PhotonAddLinkLibraryAndIncludePath(photonclient "${REQUIRED_PACKAGES}")
 PhotonAddPredefinedMacros(photonclient)
-add_dependencies(photonclient SSNet SSIO SSBase yuv glad portaudio libdshowcapture)
-target_link_libraries(photonclient portaudio SSNet SSIO SSBase glad yuv libdshowcapture ${SDL2_LIB} ${UV_LIB} ${ZIP_LIB} ${Z_LIB} ${PHOTON_PLATFORM_LIBS})
+
+if (WIN32)
+    set(LIBDSHOWCAPTURE_TARGET libdshowcapture)
+else()
+    set(LIBDSHOWCAPTURE_TARGET "")
+endif ()
+add_dependencies(photonclient SSNet SSIO SSBase yuv glad portaudio ${LIBDSHOWCAPTURE_TARGET})
+target_link_libraries(photonclient portaudio SSNet SSIO SSBase glad yuv ${LIBDSHOWCAPTURE_TARGET} ${SDL2_LIB} ${UV_LIB} ${ZIP_LIB} ${Z_LIB} ${PHOTON_PLATFORM_LIBS})
 target_include_directories(photonclient PRIVATE
         ${SSBASE_INCLUDE_DIR}
         ${GLAD_INCLUDE_DIR}

@@ -14,9 +14,9 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-void MyPerror(const std::string& s)
+void MyPerror(const ss::String& s)
 {
-    perror(s.c_str());
+    perror(s.ToStdString().c_str());
 }
 
 /**
