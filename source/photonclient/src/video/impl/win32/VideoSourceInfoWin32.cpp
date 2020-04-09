@@ -82,9 +82,7 @@ std::vector<VideoSourceInfoWin32> VideoSourceInfoWin32::QueryAllVideoSources()
             continue;
         }
 
-        std::sort(cameraConfs.begin(), cameraConfs.end(), [](const CameraConf& a, const CameraConf& b) {
-            return a.frameFormat.resolution < b.frameFormat.resolution;
-        });
+        std::sort(cameraConfs.begin(), cameraConfs.end());
         auto end = std::unique(cameraConfs.begin(), cameraConfs.end());
         cameraConfs.erase(end, cameraConfs.end());
 
