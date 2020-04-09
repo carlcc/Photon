@@ -2,11 +2,8 @@
 // Copyright (c) 2020 Carl Chen. All rights reserved.
 //
 
-#pragma once
-
-#include "../../VideoFrameFormat.h"
+#include "AVFoundationHelper.h"
 #import <AVFoundation/AVFoundation.h>
-#include <cstdint>
 
 PixelFormat AVFoundationPixelFormatToPhotonPixelFormat(uint32_t format)
 {
