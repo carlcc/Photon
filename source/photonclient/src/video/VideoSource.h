@@ -16,6 +16,7 @@ using VideoSource = VideoSourceWin32;
 
 #elif defined(PHOTON_PLATFORM_APPLE)
 
-#error NYI
+#include "impl/mac/VideoSourceMac.h"
+using VideoSource = VideoSourceMac;
 
 #endif
