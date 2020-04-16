@@ -28,24 +28,18 @@ public:
 
     bool operator!() const
     {
-        return fd_ == -1;
+        return impl_ == nullptr;
     }
 
     explicit operator bool() const
     {
-        return fd_ != -1;
+        return impl_ != nullptr;
     }
 
+    class Impl;
 private:
     void Close();
 
 private:
-    int fd_ { -1 };
-    VideoFrameFormat frameFormat_;
-    std::thread captureThread_ {};
-    OnDataCallback onDataCallback_ { nullptr };
-    OnFrameCallback onFrameCallback_ { nullptr };
-    bool isRunning { false };
-    PixelFormat outputFormat_ { PixelFormat::FMT_UNKNOWN };
-    std::shared_ptr<YUV420PVideoFrame> yuvVideoFrame_ { nullptr };
+    Impl* impl_;
 };
