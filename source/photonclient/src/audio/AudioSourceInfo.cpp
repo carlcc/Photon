@@ -47,23 +47,25 @@ std::vector<AudioSourceInfo> AudioSourceInfo::QueryAllAudioSources()
             continue;
         }
 
-        /* poll for standard sample rates */
-        inputParameters.device = i;
-        inputParameters.channelCount = 2;
-        inputParameters.sampleFormat = paInt16;
-        inputParameters.suggestedLatency = 0; /* ignored by Pa_IsFormatSupported() */
-        inputParameters.hostApiSpecificStreamInfo = nullptr;
-
-        if (inputParameters.channelCount > 0) {
+        std::vector<MicConf> micConfs;
+        for (int channelCount = 2; channelCount > 0; --channelCount) {
+            /* poll for standard sample rates */
+            inputParameters.device = i;
+            inputParameters.channelCount = channelCount;
+            inputParameters.sampleFormat = paInt16;
+            inputParameters.suggestedLatency = 0; /* ignored by Pa_IsFormatSupported() */
+            inputParameters.hostApiSpecificStreamInfo = nullptr;
             auto sampleRates = GetSupportedStandardSampleRates(&inputParameters);
+
             if (!sampleRates.empty()) {
-                std::vector<MicConf> micConfs;
-                micConfs.reserve(sampleRates.size());
+                micConfs.reserve(micConfs.size() + sampleRates.size());
                 for (auto sr : sampleRates) {
                     micConfs.push_back(MicConf { sr, uint32_t(inputParameters.channelCount) });
                 }
-                result.push_back({ i, deviceInfo->name, deviceInfo->defaultLowInputLatency, deviceInfo->defaultHighInputLatency, std::move(micConfs) });
             }
+        }
+        if (!micConfs.empty()) {
+            result.push_back({ i, deviceInfo->name, deviceInfo->defaultLowInputLatency, deviceInfo->defaultHighInputLatency, std::move(micConfs) });
         }
     }
 
