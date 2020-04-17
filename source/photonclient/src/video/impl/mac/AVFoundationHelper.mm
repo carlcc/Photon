@@ -5,6 +5,7 @@
 #include "AVFoundationHelper.h"
 #import <AVFoundation/AVFoundation.h>
 #include <future>
+#include <map>
 
 PixelFormat AVFoundationPixelFormatToPhotonPixelFormat(uint32_t format)
 {
@@ -101,4 +102,22 @@ NSArray* GetAllCameras()
 {
     NSArray* cameras = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
     return cameras;
+}
+
+const AVCaptureSessionPreset* GetCaptureSessionPresetByResolution(const Resolution& res)
+{
+    // clang-format off
+    const static std::map<Resolution, const AVCaptureSessionPreset*> kResToPreset = {
+        { { 1280, 720 }, &AVCaptureSessionPreset1280x720 },
+        { {  320, 240 }, &AVCaptureSessionPreset320x240  },
+        { {  640, 480 }, &AVCaptureSessionPreset640x480  },
+        { {  960, 540 }, &AVCaptureSessionPreset960x540  },
+        { {  352, 288 }, &AVCaptureSessionPreset352x288  },
+    };
+    // clang-format on
+    auto it = kResToPreset.find(res);
+    if (it == kResToPreset.end()) {
+        return nullptr;
+    }
+    return it->second;
 }

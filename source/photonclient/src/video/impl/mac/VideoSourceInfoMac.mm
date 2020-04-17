@@ -41,11 +41,14 @@ std::vector<VideoSourceInfoMac> VideoSourceInfoMac::QueryAllVideoSources()
 
             conf.frameFormat.pixelFormat = photonPixelFmt;
             conf.frameFormat.resolution = Resolution { uint32_t(dimension.width), uint32_t(dimension.height) };
+            if (nullptr == GetCaptureSessionPresetByResolution(conf.frameFormat.resolution)) {
+                continue;
+            }
 
             for (auto* range in [fmt videoSupportedFrameRateRanges]) {
                 uint32_t maxFrameRate = uint32_t([range maxFrameRate]);
                 uint32_t minFrameRate = uint32_t([range minFrameRate]);
-                static const uint32_t kFixFrameRates[] = { 1, 5, 10, 15, 20, 25, 30, 60, 90 };
+                static const uint32_t kFixFrameRates[] = { 10, 15, 20, 25, 30, 60, 90 };
 
                 bool isMaxFrameRateInlucded = false;
                 conf.frameInterval.numerator = 1;

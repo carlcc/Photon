@@ -42,7 +42,7 @@ public:
         ocManagedImpl_ = [[VideoSourceMacImpl alloc] init];
         ocManagedImpl_.cppImpl_ = this;
 
-        frameFormat_ = conf.frameFormat;
+        cameraConf_ = conf;
         camera_ = camera;
     }
 
@@ -92,22 +92,22 @@ public:
             return;
         }
         outputFormat_ = fmt;
-        yuvVideoFrame_ = std::make_shared<YUV420PVideoFrame>(frameFormat_.resolution.width, frameFormat_.resolution.height);
+        auto& frameFormat = cameraConf_.frameFormat;
+        yuvVideoFrame_ = std::make_shared<YUV420PVideoFrame>(frameFormat.resolution.width, frameFormat.resolution.height);
     }
 
     bool StartCapture()
     {
         SSASSERT(camera_ != nullptr);
-        
+
         AVCaptureSession* session = [[AVCaptureSession alloc] init];
-        session.sessionPreset = AVCaptureSessionPresetMedium;
 
         NSError* error = nil;
 
         AVCaptureDevice* captureDevice = camera_;
         [camera_ lockForConfiguration:&error];
-        [camera_ setActiveVideoMinFrameDuration:CMTimeMake(1,4)];
-        [camera_ setActiveVideoMaxFrameDuration:CMTimeMake(1,4)];
+        [camera_ setActiveVideoMinFrameDuration:CMTimeMake(cameraConf_.frameInterval.numerator, cameraConf_.frameInterval.denominator)];
+        [camera_ setActiveVideoMaxFrameDuration:CMTimeMake(cameraConf_.frameInterval.numerator, cameraConf_.frameInterval.denominator)];
         [camera_ unlockForConfiguration];
         AVCaptureDeviceInput* videoInput = [[AVCaptureDeviceInput deviceInputWithDevice:captureDevice error:&error] autorelease];
 
@@ -118,12 +118,15 @@ public:
             return false;
         }
         [session beginConfiguration];
-        // 添加输入
+        auto pPreset = GetCaptureSessionPresetByResolution(cameraConf_.frameFormat.resolution);
+        SSASSERT(pPreset != nullptr);
+        if ([session canSetSessionPreset:*pPreset]) {
+            [session setSessionPreset:*pPreset];
+        }
         if ([session canAddInput:videoInput]) {
             [session addInput:videoInput];
             videoInput = videoInput;
         }
-        // 添加输出
         if ([session canAddOutput:videoOutput]) {
             [session addOutput:videoOutput];
             videoOutput = videoOutput;
@@ -134,13 +137,9 @@ public:
         [videoOutput setSampleBufferDelegate:ocManagedImpl_ queue:queue];
         dispatch_release(queue);
 
-        videoOutput.videoSettings = [NSDictionary dictionaryWithObject:
-                                                      [NSNumber numberWithInt:PhotonPixelFormatToAVFoundationPixelFormat(frameFormat_.pixelFormat)]
-                                                                forKey:(id)kCVPixelBufferPixelFormatTypeKey];
-
-        // TODO: set framerate and resolution
-        // videoOutput.minFrameDuration = CMTimeMake(1, 15);
-        // videoOutput.maxFrameDuration = CMTimeMake(1, 15);
+        auto avfFmt = PhotonPixelFormatToAVFoundationPixelFormat(cameraConf_.frameFormat.pixelFormat);
+        SSASSERT(avfFmt != uint32_t(-1));
+        videoOutput.videoSettings = [NSDictionary dictionaryWithObject:[NSNumber numberWithInt:avfFmt] forKey:(id)kCVPixelBufferPixelFormatTypeKey];
 
         [session startRunning];
 
@@ -171,14 +170,15 @@ public:
             onDataCallback_(buffer);
         }
         if (onFrameCallback_ && outputFormat_ != PixelFormat::FMT_UNKNOWN) {
-            if (frameFormat_.pixelFormat == PixelFormat::FMT_YUYV422) {
+            auto& frameFormat = cameraConf_.frameFormat;
+            if (frameFormat.pixelFormat == PixelFormat::FMT_YUYV422) {
                 libyuv::YUY2ToI420(buffer, bytesPerRow,
                     yuvVideoFrame_->Y(), yuvVideoFrame_->YStride(),
                     yuvVideoFrame_->U(), yuvVideoFrame_->VStride(),
                     yuvVideoFrame_->V(), yuvVideoFrame_->VStride(),
                     width, height);
             } else {
-                std::cout << "Pixel format " << GetPixelFormatName(frameFormat_.pixelFormat) << " is not implemented" << std::endl;
+                std::cout << "Pixel format " << GetPixelFormatName(frameFormat.pixelFormat) << " is not implemented" << std::endl;
                 abort();
             }
             onFrameCallback_(yuvVideoFrame_);
@@ -190,7 +190,7 @@ private:
 
     AVCaptureDevice* camera_ { nullptr };
     AVCaptureSession* session_ { nullptr };
-    VideoFrameFormat frameFormat_ {};
+    CameraConf cameraConf_ {};
     OnDataCallback onDataCallback_ { nullptr };
     OnFrameCallback onFrameCallback_ { nullptr };
     PixelFormat outputFormat_ { PixelFormat::FMT_UNKNOWN };
