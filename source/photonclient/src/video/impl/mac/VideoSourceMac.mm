@@ -103,11 +103,22 @@ public:
         AVCaptureSession* session = [[AVCaptureSession alloc] init];
 
         NSError* error = nil;
+        
+        NSArray* supportedFormats = camera_.formats;
+        AVCaptureDeviceFormat* activeCameraFormat = nil;
+        for (AVCaptureDeviceFormat* fmt : supportedFormats) {
+            CMVideoDimensions dim = CMVideoFormatDescriptionGetDimensions(fmt.formatDescription);
+            if (dim.width == cameraConf_.frameFormat.resolution.width && dim.height == cameraConf_.frameFormat.resolution.height) {
+                activeCameraFormat = fmt;
+            }
+        }
+        SSASSERT(supportedFormats != nil);
 
         AVCaptureDevice* captureDevice = camera_;
         [camera_ lockForConfiguration:&error];
         [camera_ setActiveVideoMinFrameDuration:CMTimeMake(cameraConf_.frameInterval.numerator, cameraConf_.frameInterval.denominator)];
         [camera_ setActiveVideoMaxFrameDuration:CMTimeMake(cameraConf_.frameInterval.numerator, cameraConf_.frameInterval.denominator)];
+        [camera_ setActiveFormat:activeCameraFormat];
         [camera_ unlockForConfiguration];
         AVCaptureDeviceInput* videoInput = [[AVCaptureDeviceInput deviceInputWithDevice:captureDevice error:&error] autorelease];
 
