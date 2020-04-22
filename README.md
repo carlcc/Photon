@@ -25,6 +25,6 @@ cmake --build .
 
 You may need to install the dependencies since they are not provided in the source tree:
 
-SDL2
-libuv
-libzip
+- SDL2
+- libuv
+- libzip
