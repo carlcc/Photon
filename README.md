@@ -16,7 +16,6 @@ cmake --build .
 - SDL2
 - libuv
 - libzip
-- libdx
 - glad
 - libdshowcapture
 - libyuv
