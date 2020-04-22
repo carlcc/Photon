@@ -33,7 +33,7 @@ For simplicity we use a reliable, stream-styple transport layer for our applicat
 
 By ensuring this, the endpoint kowns how to synchronize each channel's message if necessary, for an example, to synchronize audio and video stream.
 
-### 2.4 Security
+### 2.2 Security
 
 Optional TLS
 
@@ -141,18 +141,17 @@ The range that $DSI[N]$ is able to encode is shown below:
 | Message Length | DUI[4] | Bytes |
 
 **Message types**
-| Enum | Describe | Note |
+| Enum | Description | Note |
 | --- | --- | --- |
 | 0   | Control Message | Control Message is used to set the configuration of this channel |
 | 1   | Remote Method Invoke | a.k.a. Remote Process Call |
 | 2   | Video Message | This message is a video frame or related parameters |
 | 3   | Audio Message | This message is an audio message |
-| 5   | QoS feedback  |  |
 
 
 ### 3.3 Summary
 
-The protocol layout as following:
+The protocol layout as below:
 
 A Chunk:
 ```
@@ -213,24 +212,24 @@ Control message is implemented as RMI
 
 #### 4.1.1 Handshake HELLO
 
-
 #### 4.1.2 Handshake HELLO1
 
+#### 4.1.3 Create channel
 
-#### 4.1.1 Configure chunk size
+#### 4.1.4 Configure chunk size for channel (Default chunk size is 127)
 
 ### 4.2 Remote Method Invoke(RMI) Message
 
 #### 4.2.0 RMI basic types
 
-##### 4.2.0.0 The basic
+##### 4.2.0.0 The basis
 
 All types are stored after a byte indicating it's type
 
 | Field | Encoding | Note |
 | --- | --- | --- |
 | `Object Type` | 1 byte | |
-| Type determined fields | - | Refer to the following document |
+| Type determined fields | - | Refer to the table below |
 
 
 **The `Object types` are**
@@ -241,6 +240,14 @@ All types are stored after a byte indicating it's type
 |3| Integer|
 |4| Array|
 |5| Map|
+|6| int8_t|
+|7| uint8_t|
+|8| int16_t|
+|9| uint16_t|
+|10| int32_t|
+|11| uint32_t|
+|12| int64_t|
+|13| uint64_t|
 |255|Void|
 
 ##### 4.2.0.1 Byte Array
@@ -263,12 +270,12 @@ All types are stored after a byte indicating it's type
 | --- | --- | --- |
 | int8_t | raw | |
 | uint8_t | raw | a.k.a. byte |
-| int16_t | raw | |
-| uint16_t | raw | |
-| int32_t | raw | |
-| uint32_t | raw | |
-| int64_t | raw | |
-| uint64_t | raw | |
+| int16_t | raw | Big endian |
+| uint16_t | raw | Big endian |
+| int32_t | raw | Big endian |
+| uint32_t | raw | Big endian |
+| int64_t | raw | Big endian |
+| uint64_t | raw | Big endian |
 
 ##### 4.2.0.4 Array
 
@@ -309,7 +316,7 @@ All types are stored after a byte indicating it's type
 
 
 **`Invoke Result` enumerations**
-| Enum | Value | Note |
+| Enum | Description | Note |
 | --- | --- | --- |
 | 0 | Invoke succeed | |
 | 1 | Return type mismatch |
@@ -327,3 +334,74 @@ In the case `Invoke Result` == 2:
 
 ### 4.3 Video Message
 
+Video messages have the following layout:
+
+| Field | Type | Note |
+|--- |---| ---|
+|`compression Algorithm`(CA) | 1 Byte | An enumeration of compression algorithms|
+| Payload | - | CA determined data |
+
+**`compression Algorithm`** enumerations:
+
+| Enum | Description | Note |
+| --- | --- | --- |
+| 0 | H.264 | |
+| Other values are not defined by now |  |
+
+
+**The payload**
+If the `CA` field is H.264(Value == 0), the payload should be NALU.
+
+
+**A note about the compression algorithms**:
+
+Some other video compression algorithm candidates are VP8, VP9, H265 and AV1, and I had tested some (VP8, VP9, AV1) of which:
+
+1. VP8's quality is not so good while it produces same compression ratio
+2. VP9's quality is good, but it's a little slow while compressing high definition (720P) pictures.
+3. Although AV1 have already made a lot of significant performance optimization, but any way, it's still too slow for realtime media stream encoding.
+4. H265, I haven't test it yet.
+
+So my conclusion is: H264 seems to be the best choice to transport realtime videos by now.
+
+#### 4.3.1 RMIs to configure video parameters
+
+TODO
+
+### 4.4 Audio Message
+
+Audio messages have the following layout:
+
+| Field | Type | Note |
+|--- |---| ---|
+| Compression Algorithm(CA) | 1 Byte | Compression Algorithm |
+| Payload | raw | |
+
+**`Compression Algorithm`** enumerations:
+| Enum | Description | Note |
+| --- | --- | --- |
+| 0 | OPUS | |
+| Other values are not defined by now |  |
+
+Audio configurations such as `sample rate`, `channels count`, `sample format` and `samples per message(frame size)` can be configured using RMI on the specified channel.
+
+#### 4.4.1 RMIs to configure audio message
+
+```C++
+package audio;
+// If failed, this function should raise an exception
+void SetSampleRate(uint32_t sampleRate);
+
+// If failed, this function should raise an exception
+void SetChannelCount(uint8_t channels);
+
+enum class SampleFormat : uint8_t {
+    Uint16,
+    Int16,
+};
+// If failed, this function should raise an exception
+void SetSampleFormat(SampleFormat fmt);
+
+// If failed, this function should raise an exception
+void SetFrameSize(uint16_t milliseconds);
+```
