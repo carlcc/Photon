@@ -9,34 +9,41 @@ A `Channel` is a logical connection or a logical stream.
 
 ### 0.2 Abstract Connection
 
-A `Abstract Connection` is one or more (logical) connections shares same `Base Time` for timestaping.
+An `Abstract Connection` is one or more (logical) connections shares same `Base Time` for timestaping.
 
-**NOTE**: A `Abstract Connection` may be a single connection, but may also be several connection.
+**NOTE**: An `Abstract Connection` may be a single connection, but may also be several connections.
 
 ### 0.3 Base Time
 
-If two (logical) connection share a same `Base Time`, then if their payloads have same physical world timestamp, their payloads have same in-message timestamp.
+If two (logical) connection share a same `Base Time`, then if their payloads have a same physical world timestamp, their payloads have a same in-message timestamp.
 
 ## 1. Goals
 
 For simplicity we use a reliable, stream-styple transport layer for our application layer protocol. (e.g. TCP, QUIC, kcp, etc.)
 
-1. Multiple channel in a connection.
-2. Synchronizing different channel should be easy.
-3. Security
+
+1. Multiple channels in a connection (multiplex).
+2. Full-duplex communication.
+3. Synchronizing multiple channels should be easy.
+4. Security.
 
 ## 2. Protocol design overview
 
-### 2.1 Synchronizing different channel should be easy.
+### 2.1 Multiplex and full-duplex
+
+We use `chunking` to implement multiplexing.
+
+We use an upstream `channel` and a downstream `channel` with same tag(i.e. the `Channel ID`) to represent a full-dumplexed `logical connection`(Channel).
+
+### 2.2 Synchronizing multiple channels should be easy.
 
 **All command streams and media streams share one `Abstract Connection`.**
 
-By ensuring this, the endpoint kowns how to synchronize each channel's message if necessary, for an example, to synchronize audio and video stream.
+By ensuring this, the endpoint kowns how to synchronize each channel's message if necessary, for an example, to synchronize audio and video streams.
 
-### 2.2 Security
+### 2.3 Security
 
 Optional TLS
-
 
 ## 3. Protocol detailed design
 
@@ -119,7 +126,7 @@ The range that $DSI[N]$ is able to encode is shown below:
 |3|[-2097152, 2097151]|
 |N|[$2^{7N}$, $2^{7N} - 1$]|
 
-### 3.1 The physical connections transport the data with `Chunk`s, each chunk should have the following field:
+### 3.1 The physical connections transport our data with `Chunk`s, each chunk should have the following fields:
 
 | Field | Encoding | Note |
 |---|---| --- |
@@ -128,7 +135,9 @@ The range that $DSI[N]$ is able to encode is shown below:
 | Chunk Size | DUI[3] | Bytes |
 | Chunk Data (Payload) | raw | ${ChunkSize} bytes |
 
-**NOTE**: Channel ID `0` is reserved for protocol usage, other IDs can be used by use.
+**NOTE**: Channel ID `0` is reserved for protocol internal usage, other IDs can be used by user denending on their demands.
+
+**NOTE**: We will usage the term `Control Channel` to indicate the channel with `Channel ID 0` in the rest of this document.
 
 ### 3.2 The message header is described below:
 
@@ -208,15 +217,78 @@ low address                      high adress
 
 ### 4.1 Control Message
 
-Control message is implemented as RMI
+Control message is implemented as RMI. Refer to 4.2.
 
 #### 4.1.1 Handshake HELLO
 
+```C++
+package photon.control;
+// This function should be invoked by the connection initiator.
+// Parameters:
+// - hello: The hello message, must be "HELLO"
+// Return value:
+// - The return value must be "HELLO"
+String Hello(String hello);
+```
+
 #### 4.1.2 Handshake HELLO1
+
+```C++
+package photon.control;
+
+// The protocol version is made up of 2 bytes.
+// The high byte is the major version.
+// The low byte is the minior version.
+// e.g. 0x0100 means v1.0
+enum class ProtocolVersion : uint16_t {
+    Version1 = 0x0100,
+};
+// This function should be invoked by the connection initiator.
+// Parameters:
+// - supportedVersions: An array of the initiator's supported protocol version
+// Return value:
+// - The protocol version selected by the remote endpoint.
+ProtocolVersion Hello1(ProtocolVersion[] supportedVersions);
+```
 
 #### 4.1.3 Create channel
 
-#### 4.1.4 Configure chunk size for channel (Default chunk size is 127)
+```C++
+package photon.control;
+// Create a channel. This RMI notifies the remote endpoint to allocate system resources for communicating in the specified channel.
+// Parameters:
+// - channelId: The desired channel ID to use. Valid range is [1, 32767], see Chapter 3.1
+// If this RMI was successfully invoked (and returned), then the specified channel becomes usable.
+void CreateChannel(uint16_t channelId);
+```
+
+**NOTE**: Any operation on a unusable channel is illegal, if any operation was did, the remote endpoint might hangup the whole connection.
+
+**NOTE**: This function is only allowed to be invoked in `Control Channel` since the desired channel is not usable at the moment.
+
+#### 4.1.4 Destroy channel
+
+```C++
+package photon.control;
+// Destroy a channel. This RMI notifies the remote endopoint that a specified channels is no longer used, and the specified channel will then become unusable.
+// If this RMI was successfully invoked (and returned), then any message
+void DestroyChannel(void);
+```
+
+**NOTE**: This function should be invoked in the channel you want to destroy.
+
+**NOTE**: You should not nivoked this function in `Control Channel`.
+
+#### 4.1.5 Configure chunk size for channel (Default chunk size is determine by the sender himself, may be dynamic)
+
+```C++
+package photon.control;
+// Tell the remote endpoint what is our desired chunk size.
+// Parameters:
+// - chunkSize: Our desired chunksize, valid range is [0, 4194303] see(Chapter 3.1). The value 0 means we don't care, the remote endpoint can make decision himself.
+// If this RMI was successfully invoked, the remote endpoint should chunk the data with our desired chunkSize.
+void SetChunkSize(uint32_t chunkSize);
+```
 
 ### 4.2 Remote Method Invoke(RMI) Message
 
@@ -229,7 +301,7 @@ All types are stored after a byte indicating it's type
 | Field | Encoding | Note |
 | --- | --- | --- |
 | `Object Type` | 1 byte | |
-| Type determined fields | - | Refer to the table below |
+| `Object Type` determined fields | - | Refer to the table below |
 
 
 **The `Object types` are**
@@ -248,6 +320,7 @@ All types are stored after a byte indicating it's type
 |11| uint32_t|
 |12| int64_t|
 |13| uint64_t|
+|14| null|
 |255|Void|
 
 ##### 4.2.0.1 Byte Array
@@ -329,8 +402,8 @@ In the case `Invoke Result` == 0:
 In the case `Invoke Result` == 1 or `Invoke Result` == 2:
 `Invoke Result` should be empty.
 
-In the case `Invoke Result` == 2:
-`Invoke Result` should be a string describing the exception.
+In the case `Invoke Result` == 3:
+`Invoke Result` should be a string (see 4.2.0.2) describing the exception.
 
 ### 4.3 Video Message
 
@@ -338,10 +411,10 @@ Video messages have the following layout:
 
 | Field | Type | Note |
 |--- |---| ---|
-|`compression Algorithm`(CA) | 1 Byte | An enumeration of compression algorithms|
+|`Compression Algorithm`(CA) | 1 Byte | An enumeration of compression algorithms|
 | Payload | - | CA determined data |
 
-**`compression Algorithm`** enumerations:
+**`Compression Algorithm`** enumerations:
 
 | Enum | Description | Note |
 | --- | --- | --- |
@@ -350,19 +423,19 @@ Video messages have the following layout:
 
 
 **The payload**
-If the `CA` field is H.264(Value == 0), the payload should be NALU.
+If the `CA` field is H.264(Value == 0), the payload should be an NALU.
 
 
 **A note about the compression algorithms**:
 
-Some other video compression algorithm candidates are VP8, VP9, H265 and AV1, and I had tested some (VP8, VP9, AV1) of which:
+Some other video compression algorithm candidates are VP8, VP9, H265 and AV1, and I had tested some of which (VP8, VP9, AV1):
 
 1. VP8's quality is not so good while it produces same compression ratio
 2. VP9's quality is good, but it's a little slow while compressing high definition (720P) pictures.
 3. Although AV1 have already made a lot of significant performance optimization, but any way, it's still too slow for realtime media stream encoding.
 4. H265, I haven't test it yet.
 
-So my conclusion is: H264 seems to be the best choice to transport realtime videos by now.
+So my conclusion is: H264 seems to be the best choice to transport realtime videos by now, although there are many alternatives.
 
 #### 4.3.1 RMIs to configure video parameters
 
@@ -374,7 +447,7 @@ Audio messages have the following layout:
 
 | Field | Type | Note |
 |--- |---| ---|
-| Compression Algorithm(CA) | 1 Byte | Compression Algorithm |
+| `Compression Algorithm`(CA) | 1 Byte | Compression Algorithm |
 | Payload | raw | |
 
 **`Compression Algorithm`** enumerations:
@@ -388,7 +461,7 @@ Audio configurations such as `sample rate`, `channels count`, `sample format` an
 #### 4.4.1 RMIs to configure audio message
 
 ```C++
-package audio;
+package photon.audio;
 // If failed, this function should raise an exception
 void SetSampleRate(uint32_t sampleRate);
 
