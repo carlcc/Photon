@@ -1,6 +1,5 @@
 #pragma once
 
-#include <SSBase/Buffer.h>
 #include <SSBase/Str.h>
 #include <cstdint>
 #include <memory>
@@ -33,12 +32,12 @@ public:
         return size_;
     }
 
-    std::shared_ptr<Variant>& operator[](uint32_t index)
+    T& operator[](uint32_t index)
     {
         SSASSERT(index < size_);
         return data_[index];
     }
-    std::shared_ptr<Variant> operator[](uint32_t index) const
+    T operator[](uint32_t index) const
     {
         SSASSERT(index < size_);
         return data_[index];
@@ -49,11 +48,15 @@ private:
     T* data_;
 };
 
-class Variant;
-using ByteArray = ss::DynamicBuffer;
+using ByteArray = ArrayBase<uint8_t>;
 using String = ss::String;
+class Variant;
+struct KVEntry {
+    String key;
+    std::shared_ptr<Variant> value;
+};
 using Array = ArrayBase<std::shared_ptr<Variant>>;
-using KVArray = ArrayBase<std::pair<String, std::shared_ptr<Variant>>>;
+using KVArray = ArrayBase<KVEntry>;
 using Uint8 = std::uint8_t;
 using Int8 = std::int8_t;
 using Uint8 = std::uint8_t;
