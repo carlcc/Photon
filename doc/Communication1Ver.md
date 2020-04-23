@@ -309,18 +309,17 @@ All types are stored after a byte indicating it's type
 |--- | --- |
 |1| Byte Array|
 |2| String|
-|3| Integer|
-|4| Array|
-|5| Map|
-|6| int8_t|
-|7| uint8_t|
-|8| int16_t|
-|9| uint16_t|
-|10| int32_t|
-|11| uint32_t|
-|12| int64_t|
-|13| uint64_t|
-|14| null|
+|3| Array|
+|4| Map|
+|5| int8_t|
+|6| uint8_t|
+|7| int16_t|
+|8| uint16_t|
+|9| int32_t|
+|10| uint32_t|
+|11| int64_t|
+|12| uint64_t|
+|13| null|
 |255|Void|
 
 ##### 4.2.0.1 Byte Array
