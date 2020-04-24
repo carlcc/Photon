@@ -5,7 +5,7 @@
 namespace pht {
 
 class Variant {
-private:
+public:
     enum class Type : uint8_t {
         ByteArray = 1,
         String = 2,
@@ -21,6 +21,8 @@ private:
         Uint64 = 12,
         Null = 13,
     };
+
+private:
     // clang-format off
     template <class T> struct VariantTypeTrait;
     template <> struct VariantTypeTrait<ByteArray> { static const Type TypeEnum = Type::ByteArray; };
@@ -107,8 +109,6 @@ public:
     Variant(Int64       v): type_(Type::Int64    ), data_(new Int64    (v)) { } // NOLINT(google-explicit-constructor)
     Variant(Uint64      v): type_(Type::Uint64   ), data_(new Uint64   (v)) { } // NOLINT(google-explicit-constructor)
     Variant(Null        v): type_(Type::Null     ), data_(nullptr         ) { } // NOLINT(google-explicit-constructor)
-    // clang-format on
-
     ~Variant() { Clear(); }
     // clang-format on
 
@@ -129,84 +129,21 @@ public:
     //     return *this;
     // }
 
+    // clang-format off
+    Variant& operator=(ByteArray&& v) { SetType(Type::ByteArray); *reinterpret_cast<ByteArray*>(data_) = std::forward<ByteArray>(v); return *this; }
+    Variant& operator=(String&&    v) { SetType(Type::String);    *reinterpret_cast<String*>(data_)    = std::forward<String>(v);    return *this; }
+    Variant& operator=(Array&&     v) { SetType(Type::Array);     *reinterpret_cast<Array*>(data_)     = std::forward<Array>(v);     return *this; }
+    Variant& operator=(KVArray&&   v) { SetType(Type::KVArray);   *reinterpret_cast<KVArray*>(data_)   = std::forward<KVArray>(v);   return *this; }
+    Variant& operator=(Int8        v) { SetType(Type::Int8);      *reinterpret_cast<Int8*>(data_)      = std::forward<Int8>(v);      return *this; }
+    Variant& operator=(Uint8       v) { SetType(Type::Uint8);     *reinterpret_cast<Uint8*>(data_)     = std::forward<Uint8>(v);     return *this; }
+    Variant& operator=(Int16       v) { SetType(Type::Int16);     *reinterpret_cast<Int16*>(data_)     = std::forward<Int16>(v);     return *this; }
+    Variant& operator=(Uint16      v) { SetType(Type::Uint16);    *reinterpret_cast<Uint16*>(data_)    = std::forward<Uint16>(v);    return *this; }
+    Variant& operator=(Int32       v) { SetType(Type::Int32);     *reinterpret_cast<Int32*>(data_)     = std::forward<Int32>(v);     return *this; }
+    Variant& operator=(Uint32      v) { SetType(Type::Uint32);    *reinterpret_cast<Uint32*>(data_)    = std::forward<Uint32>(v);    return *this; }
+    Variant& operator=(Int64       v) { SetType(Type::Int64);     *reinterpret_cast<Int64*>(data_)     = std::forward<Int64>(v);     return *this; }
+    Variant& operator=(Uint64      v) { SetType(Type::Uint64);    *reinterpret_cast<Uint64*>(data_)    = std::forward<Uint64>(v);    return *this; }
+    Variant& operator=(Null        v) { SetType(Type::Null); return *this; }
     // clang-format on
-    Variant& operator=(ByteArray&& v)
-    {
-        SetType(Type::ByteArray);
-        *reinterpret_cast<ByteArray*>(data_) = std::forward<ByteArray>(v);
-        return *this;
-    }
-    Variant& operator=(String&& v)
-    {
-        SetType(Type::String);
-        *reinterpret_cast<String*>(data_) = std::forward<String>(v);
-        return *this;
-    }
-    Variant& operator=(Array&& v)
-    {
-        SetType(Type::Array);
-        *reinterpret_cast<Array*>(data_) = std::forward<Array>(v);
-        return *this;
-    }
-    Variant& operator=(KVArray&& v)
-    {
-        SetType(Type::KVArray);
-        *reinterpret_cast<KVArray*>(data_) = std::forward<KVArray>(v);
-        return *this;
-    }
-    Variant& operator=(Int8 v)
-    {
-        SetType(Type::Int8);
-        *reinterpret_cast<Int8*>(data_) = std::forward<Int8>(v);
-        return *this;
-    }
-    Variant& operator=(Uint8 v)
-    {
-        SetType(Type::Uint8);
-        *reinterpret_cast<Uint8*>(data_) = std::forward<Uint8>(v);
-        return *this;
-    }
-    Variant& operator=(Int16 v)
-    {
-        SetType(Type::Int16);
-        *reinterpret_cast<Int16*>(data_) = std::forward<Int16>(v);
-        return *this;
-    }
-    Variant& operator=(Uint16 v)
-    {
-        SetType(Type::Uint16);
-        *reinterpret_cast<Uint16*>(data_) = std::forward<Uint16>(v);
-        return *this;
-    }
-    Variant& operator=(Int32 v)
-    {
-        SetType(Type::Int32);
-        *reinterpret_cast<Int32*>(data_) = std::forward<Int32>(v);
-        return *this;
-    }
-    Variant& operator=(Uint32 v)
-    {
-        SetType(Type::Uint32);
-        *reinterpret_cast<Uint32*>(data_) = std::forward<Uint32>(v);
-        return *this;
-    }
-    Variant& operator=(Int64 v)
-    {
-        SetType(Type::Int64);
-        *reinterpret_cast<Int64*>(data_) = std::forward<Int64>(v);
-        return *this;
-    }
-    Variant& operator=(Uint64 v)
-    {
-        SetType(Type::Uint64);
-        *reinterpret_cast<Uint64*>(data_) = std::forward<Uint64>(v);
-        return *this;
-    }
-    Variant& operator=(Null v)
-    {
-        SetType(Type::Null);
-        return *this;
-    }
 
     Type GetType() const
     {

@@ -135,4 +135,27 @@ using Int64 = std::int64_t;
 using Uint64 = std::uint64_t;
 using Null = std::nullptr_t;
 
+// clang-format off
+template <class T> struct IsUnsignedInteger {};
+template <> struct IsUnsignedInteger<Uint8>  { using Type = Uint8; };
+template <> struct IsUnsignedInteger<Uint16> { using Type = Uint16; };
+template <> struct IsUnsignedInteger<Uint32> { using Type = Uint32; };
+template <> struct IsUnsignedInteger<Uint64> { using Type = Uint64; };
+
+template <class T> struct IsSignedInteger {};
+template <> struct IsSignedInteger<Int8>  { using Type = Int8; };
+template <> struct IsSignedInteger<Int16> { using Type = Int16; };
+template <> struct IsSignedInteger<Int32> { using Type = Int32; };
+template <> struct IsSignedInteger<Int64> { using Type = Int64; };
+
+template <class T> struct IsInteger {};
+template <> struct IsInteger<Uint8>  { using Type = Uint8; };
+template <> struct IsInteger<Uint16> { using Type = Uint16; };
+template <> struct IsInteger<Uint32> { using Type = Uint32; };
+template <> struct IsInteger<Uint64> { using Type = Uint64; };
+template <> struct IsInteger<Int8>   { using Type = Int8; };
+template <> struct IsInteger<Int16>  { using Type = Int16; };
+template <> struct IsInteger<Int32>  { using Type = Int32; };
+template <> struct IsInteger<Int64>  { using Type = Int64; };
+// clang-format on
 } // namespace pht
