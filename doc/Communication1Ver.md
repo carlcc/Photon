@@ -61,18 +61,16 @@ DynamicUnsignedIntegerDecoding(uint8_t *buffer)
 {
     result = 0;
     for (i = 0; i < N; ++i) {
-        if (i == N - 1) {
-            result <<= 8;
-            result |= buffer[i];
+        if (i == N-1) {
+            result |= buffer[i] << (7 * i);
+            return result;
         } else {
-            result <<= 7;
-            result |= buffer[i] & 0x7F;
-            if (buffer[i] < 0x80) {
-                break;
+            result |= (buffer[i] & 0x7F) << (7 * i);
+            if (buffer[i] 0x80 == 0) {
+                return result;
             }
         }
     }
-    return result;
 }
 ```
 
@@ -96,25 +94,20 @@ template <uint N>
 DynamicSignedIntegerDecoding(uint8_t *buffer)
 {
     result = 0;
-    actual_bytes = 0;
     for (i = 0; i < N; ++i) {
-        ++actual_bytes;
-        if (i == N - 1) {
-            result <<= 8;
-            result |= buffer[i];
+        if (i == N-1) {
+            result |= buffer[i] << (7 * i);
+            if (buffer[i] & 0x80) {
+                result -= 1 << (7 * i + 9);
+            }
+            return result;
         } else {
-            result <<= 7;
-            result |= buffer[i] & 0x7F;
-            if (buffer[i] < 0x80) {
-                break;
+            result |= (buffer[i] & 0x7F) << (7 * i);
+            if (buffer[i] 0x80 == 0) {
+                return result;
             }
         }
     }
-    actual_bits_plus1 = actual_bytes * 7 + 2;
-    if (buffer[0] & 0x40) {
-        result -= 1 << actual_bits_plus1
-    }
-    return result;
 }
 ```
 
