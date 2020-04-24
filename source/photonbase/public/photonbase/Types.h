@@ -65,13 +65,23 @@ public:
         return size_;
     }
 
+    T* Data()
+    {
+        return data_;
+    }
+
+    const T* Data() const
+    {
+        return data_;
+    }
+
     T& At(uint32_t index)
     {
         SSASSERT(index < size_);
         return data_[index];
     }
 
-    T At(uint32_t index) const
+    const T& At(uint32_t index) const
     {
         SSASSERT(index < size_);
         return data_[index];
@@ -81,7 +91,8 @@ public:
     {
         return At(index);
     }
-    T operator[](uint32_t index) const
+
+    const T& operator[](uint32_t index) const
     {
         return At(index);
     }

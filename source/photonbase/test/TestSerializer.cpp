@@ -4,34 +4,157 @@
 
 #include "TestSerializer.h"
 
+#include "photonbase/DataDeserializer.h"
 #include "photonbase/DataSerializer.h"
 #include "photonbase/Variant.h"
 
 namespace pht {
 
+bool Equals(const Array& a, const Array& b)
+{
+    if (a.Size() != b.Size()) {
+        return false;
+    }
+    for (Uint32 i = 0; i < a.Size(); ++i) {
+        auto spa = a[i];
+        auto spb = b[i];
+        if (spa == nullptr || spa->Is<Null>()) {
+            if (spb == nullptr || spb->Is<Null>()) {
+                continue;
+                ;
+            }
+            return false;
+        }
+        if (*spa != *spb) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool Equals(const KVArray& a, const KVArray& b)
+{
+    if (a.Size() != b.Size()) {
+        return false;
+    }
+    for (Uint32 i = 0; i < a.Size(); ++i) {
+        auto& entryA = a[i];
+        auto& entryB = b[i];
+        if (entryA.key != entryB.key) {
+            return false;
+        }
+
+        auto spa = entryA.value;
+        auto spb = entryB.value;
+        if (spa == nullptr || spa->Is<Null>()) {
+            if (spb == nullptr || spb->Is<Null>()) {
+                continue;
+                ;
+            }
+            return false;
+        }
+        if (*spa != *spb) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool Equals(const Variant& a, const Variant& b)
+{
+    if (&a == &b) {
+        return true;
+    }
+    if (a.GetType() != b.GetType()) {
+        return false;
+    }
+    switch (a.GetType()) {
+    case Variant::Type::ByteArray:
+        return a.Get<ByteArray>() == b.Get<ByteArray>();
+    case Variant::Type::String:
+        return a.Get<String>() == b.Get<String>();
+    case Variant::Type::Array:
+        return Equals(a.Get<Array>(), b.Get<Array>());
+    case Variant::Type::KVArray:
+        return Equals(a.Get<KVArray>(), b.Get<KVArray>());
+    case Variant::Type::Int8:
+        return a.Get<Int8>() == b.Get<Int8>();
+    case Variant::Type::Int16:
+        return a.Get<Int16>() == b.Get<Int16>();
+    case Variant::Type::Int32:
+        return a.Get<Int32>() == b.Get<Int32>();
+    case Variant::Type::Int64:
+        return a.Get<Int64>() == b.Get<Int64>();
+    case Variant::Type::Uint8:
+        return a.Get<Uint8>() == b.Get<Uint8>();
+    case Variant::Type::Uint16:
+        return a.Get<Uint16>() == b.Get<Uint16>();
+    case Variant::Type::Uint32:
+        return a.Get<Uint32>() == b.Get<Uint32>();
+    case Variant::Type::Uint64:
+        return a.Get<Uint64>() == b.Get<Uint64>();
+    case Variant::Type::Null:
+        return true;
+    default:
+        SSASSERT2(false, "Impossible case");
+    }
+}
+
 void DEFINE_VARIANT_TEST_CASE(const Variant& variant, const std::vector<uint8_t>& expected)
 {
-    uint8_t buffer[4096];
-    memset(buffer, 0, sizeof(buffer));
-    uint32_t index = 0;
-    DataSerializer::Serialize(variant, [&buffer, &index](uint8_t b) {
-        buffer[index++] = b;
-    });
-    SSASSERT(index == expected.size());
-    SSASSERT(memcmp(buffer, expected.data(), index) == 0);
+    {
+        uint8_t buffer[4096];
+        memset(buffer, 0, sizeof(buffer));
+        uint32_t index = 0;
+        DataSerializer::Serialize(variant, [&buffer, &index](uint8_t b) {
+            buffer[index++] = b;
+        });
+        SSASSERT(index == expected.size());
+        SSASSERT(memcmp(buffer, expected.data(), index) == 0);
+    }
+    {
+        // Test Deserialize
+        Variant dV;
+        Uint32 index = 0;
+        DataDeserializer::Deserialize(dV, [&expected, &index](const Uint8** ptr, Uint32 size) {
+            if (index + size > expected.size()) {
+                *ptr = nullptr;
+            }
+            *ptr = expected.data() + index;
+            index += size;
+        });
+
+        SSASSERT(Equals(dV, variant));
+    }
 }
 
 template <int N>
 void DEFINE_DUI_TEST_CASE(Uint32 n, const std::vector<uint8_t>& expected)
 {
-    uint8_t buffer[4096];
-    memset(buffer, 0, sizeof(buffer));
-    uint32_t index = 0;
-    DataSerializer::SerializeToDUI<N>(n, [&buffer, &index](uint8_t b) {
-        buffer[index++] = b;
-    });
-    SSASSERT(index == expected.size());
-    SSASSERT(memcmp(buffer, expected.data(), index) == 0);
+    {
+        uint8_t buffer[4096];
+        memset(buffer, 0, sizeof(buffer));
+        uint32_t index = 0;
+        DataSerializer::SerializeToDUI<N>(n, [&buffer, &index](uint8_t b) {
+            buffer[index++] = b;
+        });
+        SSASSERT(index == expected.size());
+        SSASSERT(memcmp(buffer, expected.data(), index) == 0);
+    }
+
+    // Test Deserialize
+    {
+        Uint32 dN;
+        Uint32 index = 0;
+        DataDeserializer::DeserializeFromDUI<N>(dN, [&expected, &index](const Uint8** ptr, Uint32 size) {
+            if (index + size > expected.size()) {
+                *ptr = nullptr;
+            }
+            *ptr = expected.data() + index;
+            index += size;
+        });
+        SSASSERT(dN == n); // Deserialized should == the original value
+    }
 }
 
 template <int N>
@@ -53,7 +176,7 @@ void GetEncoding(Uint32 n)
                 printf("0x%02X, ", n);
                 break;
             } else {
-                printf("0x%02X, ", (n&0x7F) | 0x80);
+                printf("0x%02X, ", (n & 0x7F) | 0x80);
                 n >>= 7u;
             }
         }

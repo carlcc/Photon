@@ -236,5 +236,9 @@ private:
 };
 
 bool operator==(const Variant& a, const Variant& b);
+inline bool operator!=(const Variant& a, const Variant& b)
+{
+    return !(a == b);
+}
 
 } // namespace pht

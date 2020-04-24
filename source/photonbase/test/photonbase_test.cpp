@@ -1,7 +1,6 @@
 #include "TestSerializer.h"
 #include "TestVariant.h"
 #include <iostream>
-using namespace pht;
 
 int main()
 {
