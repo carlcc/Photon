@@ -69,8 +69,8 @@ std::vector<VideoSourceInfoWin32> VideoSourceInfoWin32::QueryAllVideoSources()
             }
             conf.frameFormat.resolution = Resolution { uint32_t(cap.maxCX), uint32_t(cap.maxCY) };
 
-            conf.frameInterval.numerator = cap.minInterval;
-            conf.frameInterval.denominator = 10000000;
+            conf.frameInterval.numerator = uint32_t(cap.minInterval);
+            conf.frameInterval.denominator = uint32_t(10000000);
             cameraConfs.push_back(conf);
 
             if (cap.minInterval != cap.maxInterval) {
@@ -82,7 +82,9 @@ std::vector<VideoSourceInfoWin32> VideoSourceInfoWin32::QueryAllVideoSources()
             continue;
         }
 
-        std::sort(cameraConfs.begin(), cameraConfs.end());
+        std::sort(cameraConfs.begin(), cameraConfs.end(), [](const CameraConf& a, const CameraConf& b)-> bool {
+            return a.frameFormat.resolution < b.frameFormat.resolution;
+        });
         auto end = std::unique(cameraConfs.begin(), cameraConfs.end());
         cameraConfs.erase(end, cameraConfs.end());
 
