@@ -2,8 +2,8 @@
 // Copyright (c) 2020 Carl Chen. All rights reserved.
 //
 
-#include "photonbase/DataSerializer.h"
-#include "photonbase/Variant.h"
+#include "photonbase/protocol/DataSerializer.h"
+#include "photonbase/core/Variant.h"
 
 namespace pht {
 

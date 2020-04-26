@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "Types.h"
+#include "photonbase/core/Types.h"
+#include <functional>
 
 namespace pht {
 

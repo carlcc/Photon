@@ -4,9 +4,9 @@
 
 #include "TestSerializer.h"
 
-#include "photonbase/DataDeserializer.h"
-#include "photonbase/DataSerializer.h"
-#include "photonbase/Variant.h"
+#include "photonbase/protocol/DataDeserializer.h"
+#include "photonbase/protocol/DataSerializer.h"
+#include "photonbase/core/Variant.h"
 
 namespace pht {
 

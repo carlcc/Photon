@@ -4,7 +4,7 @@
 
 #include "TestVariant.h"
 #include <SSBase/Assert.h>
-#include <photonbase/Variant.h>
+#include <photonbase/core/Variant.h>
 
 #define ASSERT_ABORT(expr)                               \
     try {                                                \
