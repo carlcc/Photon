@@ -7,11 +7,11 @@
 
 A `Channel` is a logical connection or a logical stream.
 
-### 0.2 Abstract Connection
+### 0.2 Generic Connection
 
-An `Abstract Connection` is one or more (logical) connections shares same `Base Time` for timestaping.
+An `Generic Connection` is one or more (logical) connections shares same `Base Time` for timestaping.
 
-**NOTE**: An `Abstract Connection` may be a single connection, but may also be several connections.
+**NOTE**: An `Generic Connection` may be a single connection, but may also be several connections.
 
 ### 0.3 Base Time
 
@@ -37,7 +37,7 @@ We use an upstream `channel` and a downstream `channel` with same tag(i.e. the `
 
 ### 2.2 Synchronizing multiple channels should be easy.
 
-**All command streams and media streams share one `Abstract Connection`.**
+**All command streams and media streams share one `Generic Connection`.**
 
 By ensuring this, the endpoint kowns how to synchronize each channel's message if necessary, for an example, to synchronize audio and video streams.
 
@@ -145,7 +145,7 @@ The range that $DSI[N]$ is able to encode is shown below:
 **Message types**
 | Enum | Description | Note |
 | --- | --- | --- |
-| 0   | Control Message | Control Message is used to set the configuration of this channel |
+| 0   | Control Message | Control Message is used to configure or operate the whole connection |
 | 1   | Remote Method Invoke | a.k.a. Remote Process Call |
 | 2   | Video Message | This message is a video frame or related parameters |
 | 3   | Audio Message | This message is an audio message |
@@ -159,7 +159,7 @@ A Chunk:
 ```
 low address                                                                                                         high adress
 +------------+------------+-----------+-----------------------------+----------------+----------+------------+----------------+
-| Channel ID | Message ID | Timestamp | Importance and Message type | Message Length | Chunk ID | Chunk Size |   Chunk Data   |
+| Channel ID | Message ID | Timestamp |  Reserved and Message type  | Message Length | Chunk ID | Chunk Size |   Chunk Data   |
 +------------+------------+-----------+-----------------------------+----------------+----------+------------+----------------+
    1~2 B         1~3B         1~4B            1B = 3b + 5b                1~4 B         1~4 B       1~3 B      ${ChunkSize} B
 ```
