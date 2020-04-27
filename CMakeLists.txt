@@ -6,9 +6,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 include(common.cmake)
 
-PhotonFindLibrary(SDL2_LIB "SDL2" True)
-PhotonFindPath(SDL2_INCLUDE "SDL2/SDL.h" True)
-
 set(PHOTON_PROJECT_ROOT ${CMAKE_CURRENT_LIST_DIR})
 set(GLAD_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/thirdparty/glad/include)
 set(YUV_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libyuv/include)
@@ -21,5 +18,11 @@ else()
 endif()
 
 add_subdirectory(thirdparty)
+
+
+PhotonFindLibrary(SDL2_LIB "SDL2" True)
+PhotonFindPath(SDL2_INCLUDE "SDL2/SDL.h" True)
+PhotonFindLibrary(UV_LIB "uv" True)
+PhotonFindPath(UV_INCLUDE "uv.h" True)
 add_subdirectory(source)
 
