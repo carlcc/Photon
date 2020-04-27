@@ -9,11 +9,12 @@ target_link_libraries(photonbase
     SSNet SSIO SSBase
     ${UV_LIB}
     ${ZIP_LIB}
-    ${Z_LIB} 
+    ${Z_LIB}
 )
 target_include_directories(photonbase PRIVATE
         public
         ${SSBASE_INCLUDE_DIR}
+        ${UV_INCLUDE}
 )
 
 option(PHOTONBASE_ENABLE_TESTS "Build photonebase tests" ON)
