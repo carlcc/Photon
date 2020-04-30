@@ -284,6 +284,7 @@ inline void critical(wstring_view_t fmt, const Args &... args)
 // SPDLOG_LEVEL_CRITICAL,
 // SPDLOG_LEVEL_OFF
 //
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 
 #define SPDLOG_LOGGER_CALL(logger, level, ...) (logger)->log(spdlog::source_loc{__FILE__, __LINE__, SPDLOG_FUNCTION}, level, __VA_ARGS__)
 

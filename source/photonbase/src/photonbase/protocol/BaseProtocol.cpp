@@ -6,9 +6,24 @@
 
 namespace pht {
 
-bool BaseProtocol::OnInBoundData(ss::DynamicBuffer& ioBuffer)
+bool BaseProtocol::OnInBoundData(ss::DynamicBuffer& inputBuffer, ss::DynamicBuffer& outputBuffer)
 {
     return false; // NYI
+}
+
+bool BaseProtocol::OnOutBoundData(ss::DynamicBuffer& inputBuffer, ss::DynamicBuffer& outputBuffer)
+{
+    return false; // NYI
+}
+
+void BaseProtocol::SetHighLevelProtocol(IProtocol* protocol)
+{
+    highLevelProtocol_ = protocol;
+}
+
+void BaseProtocol::SetLowLevelProtocol(IProtocol* protocol)
+{
+    lowLevelProtocol_ = protocol;
 }
 
 IProtocol* BaseProtocol::GetHighLevelProtocol() const
@@ -19,11 +34,6 @@ IProtocol* BaseProtocol::GetHighLevelProtocol() const
 IProtocol* BaseProtocol::GetLowLevelProtocol() const
 {
     return lowLevelProtocol_;
-}
-
-IProtocol::ITransport* BaseProtocol::GetTransport() const
-{
-    return GetLowLevelProtocol()->GetTransport();
 }
 
 }

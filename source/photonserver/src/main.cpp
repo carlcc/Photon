@@ -2,27 +2,14 @@
 // Created by carl on 20-3-31.
 //
 
+#include "ClientHandle.h"
 #include "spdlog/spdlog.h"
 #include <SSNet/AsyncTcpSocket.h>
 #include <SSNet/Loop.h>
 #include <iostream>
+#include <photonbase/protocol/PhotonProtocol.h>
 
-void OnClientData(const ss::SharedPtr<ss::AsyncTcpSocket>& client, ssize_t nread, const char* data)
-{
-    if (nread < 0) {
-        SPDLOG_INFO("Got nread {}", nread);
-        client->Close(nullptr);
-        return;
-    }
 
-    SPDLOG_INFO("Receive {} bytes", nread);
-    client->Send(data, nread, [client](int status) {
-        if (status != 0) {
-            SPDLOG_WARN("Send data failed");
-        }
-        client->Close(nullptr);
-    });
-}
 
 void OnConnection(const ss::SharedPtr<ss::AsyncTcpSocket>& server, int status)
 {
@@ -36,10 +23,11 @@ void OnConnection(const ss::SharedPtr<ss::AsyncTcpSocket>& server, int status)
         return;
     }
     SPDLOG_INFO("A client accepted");
-    // TODO create a TcpTransport
 
-    client->StartReceive([client](ssize_t nread, const char* data) {
-        OnClientData(client, nread, data);
+    auto clientHandle = std::make_shared<phtserver::ClientHandle>(client);
+    // keep a reference of client and clientHandle to ensure they are not destructed
+    client->StartReceive([clientHandle, client](ssize_t nread, const char* data) {
+        clientHandle->OnClientData(nread, data);
     });
 }
 
