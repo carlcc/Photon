@@ -368,7 +368,7 @@ All types are stored after a byte indicating it's type
 | --- | --- | --- |
 |Return Type|`Object Type` enum||
 |Method Full Name| String | With package name. e.g. use `com.example.foo` instead of `foo` unless you want to invoke the `foo` function in default package|
-|Arguments| K-V Array | See 4.2.0.5 |
+|Arguments| Array | See 4.2.0.4 |
 
 
 #### 4.2.2 The RMI Message response format
@@ -385,8 +385,8 @@ All types are stored after a byte indicating it's type
 | --- | --- | --- |
 | 0 | Invoke succeed | |
 | 1 | Return type mismatch |
-| 2 | Paramter number or type mismatch |
-| 3 | Exception occured |
+| 2 | Parameter number or type mismatch |
+| 3 | Exception occurred |
 
 In the case `Invoke Result` == 0:
 `Invoke Result` determined data should be the object (see 4.2.0.0) returned or empty if the return type is `Void`.
