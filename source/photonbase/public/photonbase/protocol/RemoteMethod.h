@@ -11,6 +11,8 @@ namespace pht {
 
 class RemoteMethod {
 public:
+    RemoteMethod() = default;
+
     RemoteMethod(Variant::Type retType, String&& methodName, Array&& args)
         : methodName_(std::forward<String>(methodName))
         , returnType_(retType)

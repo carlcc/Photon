@@ -65,7 +65,11 @@ public:
         , data_(nullptr)
     {
         if (v != nullptr) {
-            *this = *v;
+            if constexpr (std::is_same_v<T, char> || std::is_same_v<T, wchar_t>) {
+                *this = v;
+            } else {
+                *this = *v;
+            }
         }
     }
 

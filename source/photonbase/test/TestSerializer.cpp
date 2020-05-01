@@ -3,12 +3,14 @@
 //
 
 #include "TestSerializer.h"
-
+#include "photonbase/core/Variant.h"
 #include "photonbase/protocol/DataDeserializer.h"
 #include "photonbase/protocol/DataSerializer.h"
-#include "photonbase/core/Variant.h"
+#include "photonbase/protocol/RemoteMethod.h"
 
 namespace pht {
+
+bool Equals(const Variant& a, const Variant& b);
 
 bool Equals(const Array& a, const Array& b)
 {
@@ -21,11 +23,10 @@ bool Equals(const Array& a, const Array& b)
         if (spa == nullptr || spa->Is<Null>()) {
             if (spb == nullptr || spb->Is<Null>()) {
                 continue;
-                ;
             }
             return false;
         }
-        if (*spa != *spb) {
+        if (!Equals(*spa, *spb)) {
             return false;
         }
     }
@@ -49,11 +50,10 @@ bool Equals(const KVArray& a, const KVArray& b)
         if (spa == nullptr || spa->Is<Null>()) {
             if (spb == nullptr || spb->Is<Null>()) {
                 continue;
-                ;
             }
             return false;
         }
-        if (*spa != *spb) {
+        if (!Equals(*spa, *spb)) {
             return false;
         }
     }
@@ -317,15 +317,8 @@ static void TestDUI()
     // clang-format on
 }
 
-void TestSerializer::test()
+static void TestVariant()
 {
-    std::cout << "Test serialize begin" << std::endl;
-
-    {
-        // Test DUI
-        TestDUI();
-    }
-
     { // NULL
         Variant null;
         DEFINE_VARIANT_TEST_CASE(null, { 13 });
@@ -381,6 +374,116 @@ void TestSerializer::test()
         Variant emptyArray(arr2);
         DEFINE_VARIANT_TEST_CASE(emptyArray, result);
     }
+}
+
+inline bool Equals(const RemoteMethod& a, const RemoteMethod& b)
+{
+    return a.GetReturnType() == b.GetReturnType() && a.GetMethodName() == b.GetMethodName()
+        && Equals(a.GetParameters(), b.GetParameters());
+}
+
+void DEFINE_REMOTE_METHOD_TEST_CASE(const RemoteMethod& method, const std::vector<uint8_t>& expected)
+{
+    {
+        uint8_t buffer[4096];
+        memset(buffer, 0, sizeof(buffer));
+        uint32_t index = 0;
+        DataSerializer::Serialize(method, [&buffer, &index](uint8_t b) {
+            buffer[index++] = b;
+        });
+        SSASSERT(index == expected.size());
+        for (int i = 0; i < index; ++i) {
+            printf("%02X, ", 0xff & buffer[i]);
+        }
+        printf("\n");
+        for (int i = 0; i < index; ++i) {
+            printf("%02X, ", 0xff & expected[i]);
+        }
+        printf("\n");
+        SSASSERT(memcmp(buffer, expected.data(), index) == 0);
+    }
+    {
+        // Test Deserialize
+        RemoteMethod dM;
+        Uint32 index = 0;
+        DataDeserializer::Deserialize(dM, [&expected, &index](const Uint8** ptr, Uint32 size) {
+            if (index + size > expected.size()) {
+                *ptr = nullptr;
+            }
+            *ptr = expected.data() + index;
+            index += size;
+        });
+
+        SSASSERT(Equals(dM, method));
+    }
+}
+
+void TestRemoteMethod()
+{
+    {
+        RemoteMethod m(Variant::Type::Void, "method_name", Array(0));
+        DEFINE_REMOTE_METHOD_TEST_CASE(m, {
+                                              0xFF, // return type (Void)
+                                              0x0b, 'm', 'e', 't', 'h', 'o', 'd', '_', 'n', 'a', 'm', 'e', // method name
+                                              0x00 // arguments
+                                          });
+    }
+    {
+        Array params(2);
+        ByteArray byteArray(3);
+        byteArray[0] = 0x32;
+        byteArray[1] = 0xA5;
+        byteArray[2] = 0x5A;
+        params[0] = std::make_shared<Variant>("StringParam");
+        params[1] = std::make_shared<Variant>(byteArray);
+        RemoteMethod m(Variant::Type::String, "中文方法名", std::move(params));
+        DEFINE_REMOTE_METHOD_TEST_CASE(m, { 0x02, // return type (String)
+                                              0x0F, 0xE4, 0xB8, 0xAD, 0xE6, 0x96, 0x87, 0xE6, 0x96, 0xB9, 0xE6, 0xB3, 0x95, 0xE5, 0x90, 0x8D, // method name
+                                              0x02, // arguments
+                                              0x02, // argument 1: String
+                                              0x0B, 'S', 't', 'r', 'i', 'n', 'g', 'P', 'a', 'r', 'a', 'm', // String value
+                                              0x01, // argument 2: Byte Array
+                                              0x03, 0x32, 0xA5, 0x5A });
+    }
+
+    {
+        KVArray map(3);
+        map[0] = { "key1", std::make_shared<Variant>(Uint32(0x12345678)) };
+        map[1] = { "key2", std::make_shared<Variant>("Hello") };
+        map[2] = { "key3", std::make_shared<Variant>(Uint8(1)) };
+        ByteArray byteArray(3);
+        byteArray[0] = 0x32;
+        byteArray[1] = 0xA5;
+        byteArray[2] = 0x5A;
+
+        Array params(2);
+        params[0] = std::make_shared<Variant>(map);
+        params[1] = std::make_shared<Variant>(byteArray);
+        RemoteMethod m(Variant::Type::String, "Method3", std::move(params));
+        DEFINE_REMOTE_METHOD_TEST_CASE(m, { 0x02, // return type (String)
+                                              0x07, 'M', 'e', 't', 'h', 'o', 'd', '3', // method name
+                                              0x02, // arguments
+                                              0x04, // argument 1: KV-Array
+                                              0x03, // KV-array size
+                                              0x04, 'k', 'e', 'y', '1', // key1
+                                              0x0A, 0x12, 0x34, 0x56, 0x78, //
+                                              0x04, 'k', 'e', 'y', '2', // key2
+                                              0x02, 0x05, 'H', 'e', 'l', 'l', 'o', //
+                                              0x04, 'k', 'e', 'y', '3', // key3
+                                              0x06, 0x01, //
+                                              0x01, // argument 2: Byte Array
+                                              0x03, 0x32, 0xA5, 0x5A });
+    }
+}
+
+void TestSerializer::test()
+{
+    std::cout << "Test serialize begin" << std::endl;
+
+    TestDUI();
+    TestVariant();
+    TestRemoteMethod();
+
     std::cout << "Test serialize pass" << std::endl;
 }
 

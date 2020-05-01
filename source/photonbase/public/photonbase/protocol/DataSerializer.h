@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "RemoteMethod.h"
 #include "photonbase/core/Types.h"
 
 #include <functional>
