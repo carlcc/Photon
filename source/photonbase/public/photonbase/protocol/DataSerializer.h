@@ -4,12 +4,15 @@
 
 #pragma once
 
+#include "RemoteMethod.h"
 #include "photonbase/core/Types.h"
+
 #include <functional>
 
 namespace pht {
 
 class Variant;
+class RemoteMethod;
 
 class DataSerializer {
     // clang-format off
@@ -32,6 +35,31 @@ public:
      * @return Return true on succeed, else false
      */
     static bool Serialize(const Variant& v, const WriteCallback& write);
+
+    /**
+     *
+     * @param m The remote method to serialize
+     * @param write A callback function to receive serialized bytes.
+     * @return Return true on succeed, else false
+     */
+    static bool Serialize(const RemoteMethod& m, const WriteCallback& write);
+
+    /**
+     *
+     * @param str The remote method to serialize
+     * @param write A callback function to receive serialized bytes.
+     * @return Return true on succeed, else false
+     */
+    static bool Serialize(const String& str, const WriteCallback& write);
+
+    /**
+     *
+     * @param arr str The remote method to serialize
+     * @param write A callback function to receive serialized bytes.
+     * @return Return true on succeed, else false
+     * @return Return true on succeed, else false
+     */
+    static bool Serialize(const Array& arr, const WriteCallback& write);
 
     /**
      * Serialize an unsigned integer to DUI[N] encoding

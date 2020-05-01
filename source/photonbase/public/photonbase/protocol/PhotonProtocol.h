@@ -12,6 +12,9 @@ class PhotonProtocol : public BaseProtocol {
 public:
 
     bool OnInBoundData(ss::DynamicBuffer& inputBuffer, ss::DynamicBuffer& outputBuffer) override;
+
+private:
+    class IProtocolState;
 };
 
 }

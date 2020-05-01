@@ -9,6 +9,8 @@
 
 namespace pht {
 
+class RemoteMethod;
+
 class DataDeserializer {
     // clang-format off
     template <int N> struct DUIRange {};
@@ -25,11 +27,35 @@ public:
 
     /**
      *
-     * @param v The variant to serialize.
+     * @param v The variant to deserialize.
      * @param read A callback function to get binary data.
      * @return Return true on succeed, else false
      */
     static bool Deserialize(Variant& v, const ReadCallback& read);
+
+    /**
+     *
+     * @param m The method to deserialize.
+     * @param read A callback function to get binary data.
+     * @return Return true on succeed, else false
+     */
+    static bool Deserialize(RemoteMethod& m, const ReadCallback& read);
+
+    /**
+     *
+     * @param str The String to deserialize.
+     * @param read A callback function to get binary data.
+     * @return Return true on succeed, else false
+     */
+    static bool Deserialize(String& str, const ReadCallback& read);
+
+    /**
+     *
+     * @param arr The array to deserialize.
+     * @param read A callback function to get binary data.
+     * @return Return true on succeed, else false
+     */
+    static bool Deserialize(Array& arr, const ReadCallback& read);
 
     /**
      * Serialize an unsigned integer to DUI[N] encoding
@@ -37,7 +63,7 @@ public:
      * @tparam T The data type. Should be one of {Uint8, Uint16, Uint32, Uint64}
      * @tparam Max The maximum value DUI[N] can represent(You should not fill this argument). Used to limit template specialization
      * @tparam X Used to limit template specialization
-     * @param data The number to serialize
+     * @param data The number to deserialize
      * @param read A callback function to receive serialized bytes.
      * @return Return true on succeed, else false
      */

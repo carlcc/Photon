@@ -20,6 +20,7 @@ public:
         Int64 = 11,
         Uint64 = 12,
         Null = 13,
+        Void = 255, // NOTE: Although this enum(Void) is here, but in fact no variant can be void.
     };
 
 private:

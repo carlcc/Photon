@@ -4,6 +4,7 @@
 
 #include "photonbase/protocol/DataSerializer.h"
 #include "photonbase/core/Variant.h"
+#include "photonbase/protocol/RemoteMethod.h"
 
 namespace pht {
 
@@ -11,20 +12,6 @@ bool DataSerializer::Serialize(const Variant& v, const WriteCallback& write)
 {
     write((uint8_t)v.GetType());
 
-    struct InternalSerializer {
-        static bool Serialize(const String& str, const WriteCallback& write)
-        {
-            std::string bytes = str.ToStdString(ss::String::CharSet::kUtf8);
-            if (!SerializeToDUI<4>(bytes.length(), write)) {
-                std::cout << "Serialize DUI failed" << std::endl;
-                return false;
-            }
-            for (auto byte : bytes) {
-                write(Uint8(byte));
-            }
-            return true;
-        }
-    };
     switch (v.GetType()) {
     case Variant::Type::ByteArray: {
         const auto& ba = v.Get<ByteArray>();
@@ -39,25 +26,11 @@ bool DataSerializer::Serialize(const Variant& v, const WriteCallback& write)
     }
     case Variant::Type::String: {
         const auto& str = v.Get<String>();
-        return InternalSerializer::Serialize(str, write);
+        return Serialize(str, write);
     }
     case Variant::Type::Array: {
         const auto& arr = v.Get<Array>();
-        if (!SerializeToDUI<4>(arr.Size(), write)) {
-            std::cout << "Serialize DUI failed" << std::endl;
-            return false;
-        }
-        for (uint32_t i = 0; i < arr.Size(); ++i) {
-            if (arr[i] == nullptr) {
-                // Treat nullptr as Null variant
-                write(uint8_t(Variant::Type::Null));
-                continue;
-            }
-            if (!Serialize(*arr[i], write)) {
-                return false;
-            }
-        }
-        return true;
+        return Serialize(arr, write);
     }
     case Variant::Type::KVArray: {
         const auto& kvArr = v.Get<KVArray>();
@@ -67,7 +40,7 @@ bool DataSerializer::Serialize(const Variant& v, const WriteCallback& write)
         }
         for (uint32_t i = 0; i < kvArr.Size(); ++i) {
             const auto& entry = kvArr[i];
-            if (!InternalSerializer::Serialize(entry.key, write)) {
+            if (!Serialize(entry.key, write)) {
                 return false;
             }
             if (entry.value == nullptr) {
@@ -148,6 +121,47 @@ bool DataSerializer::Serialize(const Variant& v, const WriteCallback& write)
     default:
         SSASSERT2(false, "Impossible");
     }
+}
+
+bool DataSerializer::Serialize(const RemoteMethod& m, const WriteCallback& write)
+{
+    SSASSERT((m.GetReturnType() >= Variant::Type::ByteArray && m.GetReturnType() <= Variant::Type::Null)
+        || m.GetReturnType() == Variant::Type::Void);
+
+    write((uint8_t)m.GetReturnType());
+    return Serialize(m.GetMethodName(), write) && Serialize(m.GetParameters(), write);
+}
+
+bool DataSerializer::Serialize(const String& str, const WriteCallback& write)
+{
+    std::string bytes = str.ToStdString(ss::String::CharSet::kUtf8);
+    if (!SerializeToDUI<4>(bytes.length(), write)) {
+        std::cout << "Serialize DUI failed" << std::endl;
+        return false;
+    }
+    for (auto byte : bytes) {
+        write(Uint8(byte));
+    }
+    return true;
+}
+
+bool DataSerializer::Serialize(const Array& arr, const WriteCallback& write)
+{
+    if (!DataSerializer::SerializeToDUI<4>(arr.Size(), write)) {
+        std::cout << "Serialize DUI failed" << std::endl;
+        return false;
+    }
+    for (uint32_t i = 0; i < arr.Size(); ++i) {
+        if (arr[i] == nullptr) {
+            // Treat nullptr as Null variant
+            write(uint8_t(Variant::Type::Null));
+            continue;
+        }
+        if (!DataSerializer::Serialize(*arr[i], write)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 }

@@ -10,6 +10,7 @@ namespace pht {
 
 class IProtocol {
 public:
+    virtual ~IProtocol() = default;
 
     virtual bool OnInBoundData(ss::DynamicBuffer& inputBuffer, ss::DynamicBuffer& outputBuffer) = 0;
 

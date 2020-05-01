@@ -4,6 +4,7 @@
 
 #include "photonbase/protocol/DataDeserializer.h"
 #include "photonbase/core/Variant.h"
+#include "photonbase/protocol/RemoteMethod.h"
 
 namespace pht {
 
@@ -35,29 +36,19 @@ bool pht::DataDeserializer::Deserialize(Variant& v, const ReadCallback& read)
         return true;
     }
     case Uint8(Variant::Type::String): {
-        Uint32 length;
-        if (!DeserializeFromDUI<4>(length, read)) {
+        String str;
+        if (!Deserialize(str, read)) {
             return false;
         }
-        const Uint8* bytes;
-        READ_NEXT_BYTE(bytes, length);
-        String str((const char*)bytes, length);
         v = std::move(str);
         return true;
     }
     case Uint8(Variant::Type::Array): {
-        Uint32 length;
-        if (!DeserializeFromDUI<4>(length, read)) {
+        Array arr;
+        if (!Deserialize(arr, read)) {
             return false;
         }
-        Array arr(length);
-        for (Uint32 i = 0; i < length; ++i) {
-            auto spVariant = std::make_shared<Variant>();
-            arr[i] = spVariant;
-            if (!Deserialize(*spVariant, read)) {
-                return false;
-            }
-        }
+
         v = std::move(arr);
         return true;
     }
@@ -68,14 +59,10 @@ bool pht::DataDeserializer::Deserialize(Variant& v, const ReadCallback& read)
         }
         KVArray arr(length);
         for (Uint32 i = 0; i < length; ++i) {
-            Uint32 keyLength;
-            if (!DeserializeFromDUI<4>(keyLength, read)) {
+            String key;
+            if (!Deserialize(key, read)) {
                 return false;
             }
-            const Uint8* bytes;
-            READ_NEXT_BYTE(bytes, length);
-            String key((const char*)bytes, length);
-
             auto spVariant = std::make_shared<Variant>();
             if (!Deserialize(*spVariant, read)) {
                 return false;
@@ -143,6 +130,50 @@ bool pht::DataDeserializer::Deserialize(Variant& v, const ReadCallback& read)
         std::cerr << "Deserialize failed: invalid variant type: " << int(type) << std::endl;
         return false;
     }
+}
+
+bool DataDeserializer::Deserialize(RemoteMethod& m, const DataDeserializer::ReadCallback& read)
+{
+    const Uint8* pRetType;
+    READ_NEXT_BYTE(pRetType, 1);
+    if ((pRetType[0] < Uint8(Variant::Type::ByteArray) || pRetType[0] > Uint8(Variant::Type::Null))
+        && pRetType[0] != Uint8(Variant::Type::Void)) {
+        std::cout << "Deserialized failed: Unknown return type: " << Uint8(pRetType[0]) << std::endl;
+        return false;
+    }
+
+    m.returnType_ = Variant::Type(pRetType[0]);
+    return Deserialize(m.methodName_, read) && Deserialize(m.parameters_, read);
+}
+
+bool DataDeserializer::Deserialize(String& str, const ReadCallback& read)
+{
+    Uint32 length;
+    if (!DeserializeFromDUI<4>(length, read)) {
+        return false;
+    }
+    const Uint8* bytes;
+    READ_NEXT_BYTE(bytes, length);
+    str = std::move(String((const char*)bytes, length));
+    return true;
+}
+
+bool DataDeserializer::Deserialize(Array& arr, const ReadCallback& read)
+{
+    Uint32 length;
+    if (!DeserializeFromDUI<4>(length, read)) {
+        return false;
+    }
+    Array tmpArr(length);
+    for (Uint32 i = 0; i < length; ++i) {
+        auto spVariant = std::make_shared<Variant>();
+        tmpArr[i] = spVariant;
+        if (!Deserialize(*spVariant, read)) {
+            return false;
+        }
+    }
+    arr = std::move(tmpArr);
+    return true;
 }
 
 }
