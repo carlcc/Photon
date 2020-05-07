@@ -219,9 +219,10 @@ package photon.control;
 // This function should be invoked by the connection initiator.
 // Parameters:
 // - hello: The hello message, must be "HELLO"
+// - applicationName: Which application this connection wants to connect to.
 // Return value:
 // - The return value must be "HELLO"
-String Hello(String hello);
+String Hello(String hello, String applicationName);
 ```
 
 #### 4.1.2 Handshake HELLO1
