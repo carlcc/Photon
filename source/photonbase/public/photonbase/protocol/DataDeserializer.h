@@ -10,6 +10,8 @@
 namespace pht {
 
 class RemoteMethod;
+class ChunkHeader;
+class MessageHeader;
 
 class DataDeserializer {
     // clang-format off
@@ -20,9 +22,96 @@ class DataDeserializer {
     template <> struct DUIRange<4> { static const Uint32 Max = 536870911; static const Uint32 Min = 0; };
     // clang-format on
 public:
-    DataDeserializer() = delete;
-    ~DataDeserializer() = delete;
+    DataDeserializer(void* data, Uint32 available)
+        : ptr_(reinterpret_cast<Uint8*>(data))
+        , available_(available)
+        , dataConsumed_(0)
+        , isNotEnoughData_(false)
+    {
+    }
+    ~DataDeserializer() = default;
 
+    bool Deserialize(Variant& v)
+    {
+        return Deserialize(v, [this](const Uint8** ptr, uint32_t len) {
+            ReadFunc(ptr, len);
+        });
+    }
+
+    bool Deserialize(RemoteMethod& m)
+    {
+        return Deserialize(m, [this](const Uint8** ptr, uint32_t len) {
+            ReadFunc(ptr, len);
+        });
+    }
+
+    bool Deserialize(ChunkHeader& ch)
+    {
+        return Deserialize(ch, [this](const Uint8** ptr, uint32_t len) {
+            ReadFunc(ptr, len);
+        });
+    }
+
+    bool Deserialize(MessageHeader& mh)
+    {
+        return Deserialize(mh, [this](const Uint8** ptr, uint32_t len) {
+            ReadFunc(ptr, len);
+        });
+    }
+
+    bool Deserialize(String& str)
+    {
+        return Deserialize(str, [this](const Uint8** ptr, uint32_t len) {
+            ReadFunc(ptr, len);
+        });
+    }
+
+    bool Deserialize(Array& arr)
+    {
+        return Deserialize(arr, [this](const Uint8** ptr, uint32_t len) {
+            ReadFunc(ptr, len);
+        });
+    }
+
+    template <int N, class T, Uint32 Max = DUIRange<N>::Max, class X = IsUnsignedInteger<T>>
+    bool DeserializeFromDUI(T& data)
+    {
+        return DeserializeFromDUI(data, [this](const Uint8** ptr, uint32_t len) {
+            ReadFunc(ptr, len);
+        });
+    }
+
+    Uint32 DataConsumed() const
+    {
+        return dataConsumed_;
+    }
+
+    bool IsNotEnoughData() const
+    {
+        return isNotEnoughData_;
+    }
+
+private:
+    void ReadFunc(const Uint8** ptr, uint32_t len)
+    {
+        if (len > available_) {
+            *ptr = nullptr;
+            isNotEnoughData_ = true;
+            return;
+        }
+        *ptr = ptr_;
+        ptr_ += len;
+        dataConsumed_ += len;
+        available_ -= len;
+    }
+
+private:
+    Uint8* ptr_ { nullptr };
+    Uint32 available_ { 0 };
+    Uint32 dataConsumed_ { 0 };
+    bool isNotEnoughData_ { false };
+
+public:
     using ReadCallback = std::function<void(const Uint8**, uint32_t)>;
 
     /**
@@ -40,6 +129,22 @@ public:
      * @return Return true on succeed, else false
      */
     static bool Deserialize(RemoteMethod& m, const ReadCallback& read);
+
+    /**
+     *
+     * @param ch The chunk header to deserialize.
+     * @param read A callback function to get binary data.
+     * @return Return true on succeed, else false
+     */
+    static bool Deserialize(ChunkHeader& ch, const ReadCallback& read);
+
+    /**
+     *
+     * @param mh The message header to deserialize.
+     * @param read A callback function to get binary data.
+     * @return Return true on succeed, else false
+     */
+    static bool Deserialize(MessageHeader& mh, const ReadCallback& read);
 
     /**
      *

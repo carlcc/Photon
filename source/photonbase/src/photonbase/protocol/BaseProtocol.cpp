@@ -26,6 +26,11 @@ void BaseProtocol::SetLowLevelProtocol(IProtocol* protocol)
     lowLevelProtocol_ = protocol;
 }
 
+void BaseProtocol::SetApplication(IApplication* application)
+{
+    application_ = application;
+}
+
 IProtocol* BaseProtocol::GetHighLevelProtocol() const
 {
     return highLevelProtocol_;
@@ -34,6 +39,11 @@ IProtocol* BaseProtocol::GetHighLevelProtocol() const
 IProtocol* BaseProtocol::GetLowLevelProtocol() const
 {
     return lowLevelProtocol_;
+}
+
+IApplication* BaseProtocol::GetApplication() const
+{
+    return application_;
 }
 
 }

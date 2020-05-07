@@ -4,6 +4,8 @@
 
 #include "photonbase/protocol/DataDeserializer.h"
 #include "photonbase/core/Variant.h"
+#include "photonbase/protocol/ChunkHeader.h"
+#include "photonbase/protocol/MessageHeader.h"
 #include "photonbase/protocol/RemoteMethod.h"
 
 namespace pht {
@@ -144,6 +146,24 @@ bool DataDeserializer::Deserialize(RemoteMethod& m, const DataDeserializer::Read
 
     m.returnType_ = Variant::Type(pRetType[0]);
     return Deserialize(m.methodName_, read) && Deserialize(m.parameters_, read);
+}
+
+bool DataDeserializer::Deserialize(ChunkHeader& ch, const DataDeserializer::ReadCallback& read)
+{
+    return DeserializeFromDUI<2>(ch.channelId, read) && DeserializeFromDUI<4>(ch.chunkId, read) && DeserializeFromDUI<3>(ch.chunkSize, read);
+}
+
+bool DataDeserializer::Deserialize(MessageHeader& mh, const DataDeserializer::ReadCallback& read)
+{
+    bool ret = DeserializeFromDUI<2>(mh.messageId, read) && DeserializeFromDUI<4>(mh.timestamp, read);
+    if (!ret) {
+        return false;
+    }
+    const Uint8* pRetType;
+    READ_NEXT_BYTE(pRetType, 1);
+    mh.reserved = pRetType[0] >> 5u;
+    mh.messageType = MessageHeader::Type(pRetType[0] & 0x1Fu);
+    return DeserializeFromDUI<4>(mh.messageLength, read);
 }
 
 bool DataDeserializer::Deserialize(String& str, const ReadCallback& read)

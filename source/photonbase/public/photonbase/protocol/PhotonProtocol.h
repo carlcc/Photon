@@ -10,11 +10,20 @@ namespace pht {
 
 class PhotonProtocol : public BaseProtocol {
 public:
+    enum class Role {
+        kServer,
+        kClient
+    };
+    PhotonProtocol(Role role);
+    ~PhotonProtocol();
 
     bool OnInBoundData(ss::DynamicBuffer& inputBuffer, ss::DynamicBuffer& outputBuffer) override;
 
 private:
     class IProtocolState;
+    class Impl;
+
+    Impl* impl_;
 };
 
 }

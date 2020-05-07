@@ -8,6 +8,8 @@
 
 namespace pht {
 
+class IApplication;
+
 class IProtocol {
 public:
     virtual ~IProtocol() = default;
@@ -19,6 +21,8 @@ public:
     virtual IProtocol* GetHighLevelProtocol() const = 0;
 
     virtual IProtocol* GetLowLevelProtocol() const = 0;
+
+    virtual IApplication* GetApplication() const = 0;
 };
 
 }

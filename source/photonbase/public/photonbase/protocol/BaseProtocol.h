@@ -18,13 +18,18 @@ public:
 
     void SetLowLevelProtocol(IProtocol* protocol);
 
+    void SetApplication(IApplication* application);
+
     IProtocol* GetHighLevelProtocol() const override;
 
     IProtocol* GetLowLevelProtocol() const override;
 
+    IApplication* GetApplication() const override;
+
 private:
     IProtocol* highLevelProtocol_ { nullptr };
     IProtocol* lowLevelProtocol_ { nullptr };
+    IApplication* application_ { nullptr };
 };
 
 }
