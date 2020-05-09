@@ -9,7 +9,7 @@
 #include "photonbase/protocol/DataDeserializer.h"
 #include "photonbase/protocol/DataSerializer.h"
 #include "photonbase/protocol/MessageHeader.h"
-#include "photonbase/protocol/RemoteMethod.h"
+#include "photonbase/protocol/RemoteMethodInfo.h"
 #include <set>
 
 namespace pht {

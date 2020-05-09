@@ -9,11 +9,11 @@
 
 namespace pht {
 
-class RemoteMethod {
+class RemoteMethodInfo {
 public:
-    RemoteMethod() = default;
+    RemoteMethodInfo() = default;
 
-    RemoteMethod(Variant::Type retType, String&& methodName, Array&& args)
+    RemoteMethodInfo(Variant::Type retType, String&& methodName, Array&& args)
         : methodName_(std::forward<String>(methodName))
         , returnType_(retType)
         , parameters_(std::forward<Array>(args))

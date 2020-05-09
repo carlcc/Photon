@@ -6,7 +6,7 @@
 #include "photonbase/core/Variant.h"
 #include "photonbase/protocol/ChunkHeader.h"
 #include "photonbase/protocol/MessageHeader.h"
-#include "photonbase/protocol/RemoteMethod.h"
+#include "photonbase/protocol/RemoteMethodInfo.h"
 
 namespace pht {
 
@@ -134,7 +134,7 @@ bool pht::DataDeserializer::Deserialize(Variant& v, const ReadCallback& read)
     }
 }
 
-bool DataDeserializer::Deserialize(RemoteMethod& m, const DataDeserializer::ReadCallback& read)
+bool DataDeserializer::Deserialize(RemoteMethodInfo& m, const DataDeserializer::ReadCallback& read)
 {
     const Uint8* pRetType;
     READ_NEXT_BYTE(pRetType, 1);

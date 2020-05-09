@@ -13,7 +13,7 @@
 
 namespace pht {
 
-class RemoteMethod;
+class RemoteMethodInfo;
 class IApplication;
 
 struct ChannelContext {
@@ -45,12 +45,12 @@ public:
 
     bool ReadChunks(std::set<ChannelContext*>& updatedChannels, ss::DynamicBuffer& inputBuffer, ss::DynamicBuffer& outputBuffer);
 
-    bool OnRemoteControlMessage(RemoteMethod& rmi, ss::DynamicBuffer& inputBuffer, ss::DynamicBuffer& outputBuffer)
+    bool OnRemoteControlMessage(RemoteMethodInfo& rmi, ss::DynamicBuffer& inputBuffer, ss::DynamicBuffer& outputBuffer)
     {
         return true;
     }
 
-    bool OnRemoteMethodInvoke(RemoteMethod& rmi, ss::DynamicBuffer& inputBuffer, ss::DynamicBuffer& outputBuffer);
+    bool OnRemoteMethodInvoke(RemoteMethodInfo& rmi, ss::DynamicBuffer& inputBuffer, ss::DynamicBuffer& outputBuffer);
 
     bool OnInBoundData(ss::DynamicBuffer& inputBuffer, ss::DynamicBuffer& outputBuffer);
 

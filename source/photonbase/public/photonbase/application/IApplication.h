@@ -9,11 +9,11 @@
 namespace pht {
 
 class IProtocol;
-class RemoteMethod;
+class RemoteMethodInfo;
 
 class IApplication {
 public:
-    virtual bool OnRemoteMethodInvoke(IProtocol* client, const RemoteMethod& method) = 0;
+    virtual bool OnRemoteMethodInvoke(IProtocol* client, const RemoteMethodInfo& method) = 0;
 
 private:
 };

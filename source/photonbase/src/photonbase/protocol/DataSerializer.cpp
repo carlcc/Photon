@@ -4,7 +4,7 @@
 
 #include "photonbase/protocol/DataSerializer.h"
 #include "photonbase/core/Variant.h"
-#include "photonbase/protocol/RemoteMethod.h"
+#include "photonbase/protocol/RemoteMethodInfo.h"
 
 namespace pht {
 
@@ -123,7 +123,7 @@ bool DataSerializer::Serialize(const Variant& v, const WriteCallback& write)
     }
 }
 
-bool DataSerializer::Serialize(const RemoteMethod& m, const WriteCallback& write)
+bool DataSerializer::Serialize(const RemoteMethodInfo& m, const WriteCallback& write)
 {
     SSASSERT((m.GetReturnType() >= Variant::Type::ByteArray && m.GetReturnType() <= Variant::Type::Null)
         || m.GetReturnType() == Variant::Type::Void);

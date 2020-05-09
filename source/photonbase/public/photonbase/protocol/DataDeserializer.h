@@ -9,7 +9,7 @@
 
 namespace pht {
 
-class RemoteMethod;
+class RemoteMethodInfo;
 class ChunkHeader;
 class MessageHeader;
 
@@ -38,7 +38,7 @@ public:
         });
     }
 
-    bool Deserialize(RemoteMethod& m)
+    bool Deserialize(RemoteMethodInfo& m)
     {
         return Deserialize(m, [this](const Uint8** ptr, uint32_t len) {
             ReadFunc(ptr, len);
@@ -128,7 +128,7 @@ public:
      * @param read A callback function to get binary data.
      * @return Return true on succeed, else false
      */
-    static bool Deserialize(RemoteMethod& m, const ReadCallback& read);
+    static bool Deserialize(RemoteMethodInfo& m, const ReadCallback& read);
 
     /**
      *

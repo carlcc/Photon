@@ -11,7 +11,7 @@
 namespace pht {
 
 class Variant;
-class RemoteMethod;
+class RemoteMethodInfo;
 
 class DataSerializer {
     // clang-format off
@@ -41,7 +41,7 @@ public:
      * @param write A callback function to receive serialized bytes.
      * @return Return true on succeed, else false
      */
-    static bool Serialize(const RemoteMethod& m, const WriteCallback& write);
+    static bool Serialize(const RemoteMethodInfo& m, const WriteCallback& write);
 
     /**
      *

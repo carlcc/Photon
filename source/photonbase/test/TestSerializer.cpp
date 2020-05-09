@@ -6,7 +6,7 @@
 #include "photonbase/core/Variant.h"
 #include "photonbase/protocol/DataDeserializer.h"
 #include "photonbase/protocol/DataSerializer.h"
-#include "photonbase/protocol/RemoteMethod.h"
+#include "photonbase/protocol/RemoteMethodInfo.h"
 
 namespace pht {
 
@@ -376,13 +376,13 @@ static void TestVariant()
     }
 }
 
-inline bool Equals(const RemoteMethod& a, const RemoteMethod& b)
+inline bool Equals(const RemoteMethodInfo& a, const RemoteMethodInfo& b)
 {
     return a.GetReturnType() == b.GetReturnType() && a.GetMethodName() == b.GetMethodName()
         && Equals(a.GetParameters(), b.GetParameters());
 }
 
-void DEFINE_REMOTE_METHOD_TEST_CASE(const RemoteMethod& method, const std::vector<uint8_t>& expected)
+void DEFINE_REMOTE_METHOD_TEST_CASE(const RemoteMethodInfo& method, const std::vector<uint8_t>& expected)
 {
     {
         uint8_t buffer[4096];
@@ -404,7 +404,7 @@ void DEFINE_REMOTE_METHOD_TEST_CASE(const RemoteMethod& method, const std::vecto
     }
     {
         // Test Deserialize
-        RemoteMethod dM;
+        RemoteMethodInfo dM;
         Uint32 index = 0;
         DataDeserializer::Deserialize(dM, [&expected, &index](const Uint8** ptr, Uint32 size) {
             if (index + size > expected.size()) {
@@ -421,7 +421,7 @@ void DEFINE_REMOTE_METHOD_TEST_CASE(const RemoteMethod& method, const std::vecto
 void TestRemoteMethod()
 {
     {
-        RemoteMethod m(Variant::Type::Void, "method_name", Array(0));
+        RemoteMethodInfo m(Variant::Type::Void, "method_name", Array(0));
         DEFINE_REMOTE_METHOD_TEST_CASE(m, {
                                               0xFF, // return type (Void)
                                               0x0b, 'm', 'e', 't', 'h', 'o', 'd', '_', 'n', 'a', 'm', 'e', // method name
@@ -436,7 +436,7 @@ void TestRemoteMethod()
         byteArray[2] = 0x5A;
         params[0] = std::make_shared<Variant>("StringParam");
         params[1] = std::make_shared<Variant>(byteArray);
-        RemoteMethod m(Variant::Type::String, "中文方法名", std::move(params));
+        RemoteMethodInfo m(Variant::Type::String, "中文方法名", std::move(params));
         DEFINE_REMOTE_METHOD_TEST_CASE(m, { 0x02, // return type (String)
                                               0x0F, 0xE4, 0xB8, 0xAD, 0xE6, 0x96, 0x87, 0xE6, 0x96, 0xB9, 0xE6, 0xB3, 0x95, 0xE5, 0x90, 0x8D, // method name
                                               0x02, // arguments
@@ -459,7 +459,7 @@ void TestRemoteMethod()
         Array params(2);
         params[0] = std::make_shared<Variant>(map);
         params[1] = std::make_shared<Variant>(byteArray);
-        RemoteMethod m(Variant::Type::String, "Method3", std::move(params));
+        RemoteMethodInfo m(Variant::Type::String, "Method3", std::move(params));
         DEFINE_REMOTE_METHOD_TEST_CASE(m, { 0x02, // return type (String)
                                               0x07, 'M', 'e', 't', 'h', 'o', 'd', '3', // method name
                                               0x02, // arguments

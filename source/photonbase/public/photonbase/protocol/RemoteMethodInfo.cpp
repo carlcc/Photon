@@ -2,11 +2,11 @@
 // Copyright (c) 2020 Carl Chen. All rights reserved.
 //
 
-#include "RemoteMethod.h"
+#include "RemoteMethodInfo.h"
 
 namespace pht {
 
-bool pht::RemoteMethod::MatchPrototype(Variant::Type retType, const String& methodName, const std::vector<Variant::Type>& args)
+bool pht::RemoteMethodInfo::MatchPrototype(Variant::Type retType, const String& methodName, const std::vector<Variant::Type>& args)
 {
     if (retType != returnType_ || methodName != methodName_ || parameters_.Size() != args.size()) {
         return false;

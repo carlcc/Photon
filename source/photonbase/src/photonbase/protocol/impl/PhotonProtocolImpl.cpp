@@ -5,7 +5,7 @@
 #include "PhotonProtocolImpl.h"
 #include "photonbase/application/IApplication.h"
 #include "photonbase/protocol/DataDeserializer.h"
-#include "photonbase/protocol/RemoteMethod.h"
+#include "photonbase/protocol/RemoteMethodInfo.h"
 
 namespace pht {
 
@@ -61,7 +61,7 @@ bool PhotonProtocol::Impl::ReadChunks(std::set<ChannelContext*>& updatedChannels
     return true;
 }
 
-bool PhotonProtocol::Impl::OnRemoteMethodInvoke(RemoteMethod& rmi, ss::DynamicBuffer& inputBuffer, ss::DynamicBuffer& outputBuffer)
+bool PhotonProtocol::Impl::OnRemoteMethodInvoke(RemoteMethodInfo& rmi, ss::DynamicBuffer& inputBuffer, ss::DynamicBuffer& outputBuffer)
 {
     auto* app = self_->GetApplication();
     if (!app) {
@@ -106,7 +106,7 @@ public:
                 return true; // Not enough data
             }
 
-            RemoteMethod method;
+            RemoteMethodInfo method;
             DataDeserializer deserializer(msgBuffer.GetData<Uint8>(), msgBuffer.Size());
             if (!deserializer.Deserialize(method)) {
                 return false; // We've got enough data, the deserialization ought to be success
@@ -129,7 +129,7 @@ public:
                     if (msgBuffer.Size() < msgHeader.messageLength) {
                         return true; // Not enough data
                     }
-                    RemoteMethod method;
+                    RemoteMethodInfo method;
                     DataDeserializer deserializer(msgBuffer.GetData<Uint8>(), msgBuffer.Size());
                     if (!deserializer.Deserialize(method)) {
                         return false; // We've got enough data, the deserialization ought to be success
@@ -187,7 +187,7 @@ bool PhotonProtocol::Impl::OnInBoundData(ss::DynamicBuffer& inputBuffer, ss::Dyn
 
         //
         DataDeserializer deserializer(inputBuffer.GetData<uint8_t>(), inputBuffer.Size());
-        RemoteMethod hello;
+        RemoteMethodInfo hello;
         if (!deserializer.Deserialize(hello)) {
             // returns true if caused by `not enough data`.
             // else returns false (protocol error)
