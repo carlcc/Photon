@@ -14,9 +14,30 @@ public:
     RemoteMethodInfo() = default;
 
     RemoteMethodInfo(Variant::Type retType, String&& methodName, Array&& args)
-        : methodName_(std::forward<String>(methodName))
+        : methodName_(std::move(methodName))
         , returnType_(retType)
-        , parameters_(std::forward<Array>(args))
+        , parameters_(std::move(args))
+    {
+    }
+
+    RemoteMethodInfo(Variant::Type retType, const String& methodName, Array&& args)
+        : methodName_(methodName)
+        , returnType_(retType)
+        , parameters_(std::move(args))
+    {
+    }
+
+    RemoteMethodInfo(Variant::Type retType, String&& methodName, const Array& args)
+        : methodName_(std::move(methodName))
+        , returnType_(retType)
+        , parameters_(std::move(args))
+    {
+    }
+
+    RemoteMethodInfo(Variant::Type retType, const String& methodName, const Array& args)
+        : methodName_(methodName)
+        , returnType_(retType)
+        , parameters_(std::move(args))
     {
     }
 
@@ -37,6 +58,11 @@ public:
         return parameters_;
     }
 
+    Array& GetParameters()
+    {
+        return parameters_;
+    }
+
     void SetMethodName(String&& methodName)
     {
         methodName_ = std::forward<String>(methodName);
@@ -49,7 +75,12 @@ public:
 
     void SetParameters(Array&& parameters)
     {
-        parameters_ = std::forward<Array>(parameters);
+        parameters_ = std::move(parameters);
+    }
+
+    void SetParameters(const Array& parameters)
+    {
+        parameters_ = parameters;
     }
 
 private:
