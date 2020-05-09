@@ -6,6 +6,8 @@
 
 namespace pht {
 
+const Variant Variant::Nil { nullptr };
+
 Int64 Variant::GetIntegerValue() const
 {
     switch (type_) {

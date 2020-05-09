@@ -3,6 +3,7 @@
 #include <SSBase/Assert.h>
 #include <SSBase/Str.h>
 #include <cstdint>
+#include <initializer_list>
 #include <memory>
 
 namespace pht {
@@ -14,6 +15,16 @@ public:
         : size_(size)
         , data_(size > 0 ? new T[size] : nullptr)
     {
+    }
+    explicit ArrayBase(std::initializer_list<T>&& arr)
+        : size_(arr.size())
+        , data_(size_ > 0 ? new T[size_] : nullptr)
+    {
+        uint32_t i = 0;
+        auto end = arr.end();
+        for (auto it = arr.begin(); it != end; ++it) {
+            data_[i++] = std::move(*it);
+        }
     }
     ~ArrayBase()
     {

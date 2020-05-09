@@ -6,6 +6,8 @@ namespace pht {
 
 class Variant {
 public:
+    const static Variant Nil;
+
     enum class Type : uint8_t {
         ByteArray = 1,
         String = 2,
@@ -23,7 +25,6 @@ public:
         Void = 255, // NOTE: Although this enum(Void) is here, but in fact no variant can be void.
     };
 
-private:
     // clang-format off
     template <class T> struct VariantTypeTrait;
     template <> struct VariantTypeTrait<ByteArray> { static const Type TypeEnum = Type::ByteArray; };
