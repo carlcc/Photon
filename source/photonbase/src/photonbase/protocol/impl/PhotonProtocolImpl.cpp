@@ -5,7 +5,9 @@
 #include "PhotonProtocolImpl.h"
 #include "photonbase/application/IApplication.h"
 #include "photonbase/protocol/DataDeserializer.h"
+#include "photonbase/protocol/RemoteMethodBinding.h"
 #include "photonbase/protocol/RemoteMethodInfo.h"
+#include <map>
 
 namespace pht {
 
@@ -75,9 +77,49 @@ public:
     virtual bool ReadMessages(Impl* self, ChannelContext& channel, ss::DynamicBuffer& inputBuffer, ss::DynamicBuffer& outputBuffer) = 0;
 };
 
-
-class PhotonProtocol::Impl::WaitForHelloDelegate : public IProtocolStateDelegate {
+class PhotonProtocolControlRMIs {
 public:
+    static RemoteMethodReturnValue Invoke(const RemoteMethodInfo& rmi, void* context)
+    {
+        auto it = PhotonProtocolControlRMIs::Get().rmis_.find(rmi.GetMethodName());
+        if (it == PhotonProtocolControlRMIs::Get().rmis_.end()) {
+            return RemoteMethodException("Method not found");
+        }
+        return it->second->Invoke(rmi, context);
+    }
+
+private:
+    static PhotonProtocolControlRMIs& Get()
+    {
+        static PhotonProtocolControlRMIs m;
+        return m;
+    }
+
+    using RMIMap = std::map<String, IRemoteMethodBinding*>;
+
+    PhotonProtocolControlRMIs()
+    {
+        rmis_ = {
+            // { "photon.control.hello", new RemoteMethodBinding<String(String, String)>(PhotonProtocolControlRMIs::hello) }
+        };
+    }
+    ~PhotonProtocolControlRMIs()
+    {
+        for (auto& [k, v] : rmis_) {
+            delete v;
+        }
+    }
+
+    RMIMap rmis_;
+};
+
+class PhotonProtocol::Impl::ServerInitDelegate : public IProtocolStateDelegate {
+public:
+    bool AttachToApplication(Impl* self, const String& appName)
+    {
+        return false; // TODO: NYI, the connection is not initialized yet, we'd better attach to application later
+    }
+
     bool ReadMessages(Impl* self, ChannelContext& channel, ss::DynamicBuffer& inputBuffer, ss::DynamicBuffer& outputBuffer) override
     {
         auto& msgBuffer = channel.messageBuffer_;
@@ -96,7 +138,7 @@ public:
                 msgBuffer.Skip(deserializer.DataConsumed());
             }
 
-            if (msgHeader.messageType != MessageHeader::Type::kControl // We are expecting 'hello' RMI
+            if (msgHeader.messageType != MessageHeader::Type::kControl // We are expecting 'HELLO' RMI
                 || msgHeader.messageLength == 0 // 'hello' RMI's length > 0
             ) {
                 return false;
@@ -116,8 +158,23 @@ public:
             }
             msgBuffer.Skip(deserializer.DataConsumed());
 
-            // TODO process RMI
+            // String photon.control.hello(String, String)
+            if (!method.MatchPrototype(Variant::Type::String, // Return type
+                    "photon.control.hello", // Method name
+                    { Variant::Type::String, Variant::Type::String }) // Parameters
+            ) {
+                return false;
+            }
+            if (method.GetParameters()[0]->Get<String>() != "HELLO") {
+                return false;
+            }
+            auto& appName = method.GetParameters()[1]->Get<String>();
 
+            if (!AttachToApplication(self, appName)) {
+                return false;
+            }
+
+            // TODO: change connetion state and it's state handle delegate
 
             // process the message
             if (0 && msgHeader.messageLength > 0) { // messageLength > 0 means we are processing message payloads

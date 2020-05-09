@@ -26,7 +26,7 @@ struct ChannelContext {
 class PhotonProtocol::Impl {
 public:
     class IProtocolStateDelegate;
-    class WaitForHelloDelegate;
+    class ServerInitDelegate;
 
     enum class ProtocolState {
         kInvalid,
